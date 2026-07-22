@@ -6,14 +6,18 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private float speed = 10f;
 
+    [SerializeField]
+    private float mouseSensitivity = 2f;
+
     private Rigidbody rb;
     private BoxCollider collider;
     private Vector3 inputDirection;
+    private float mouseX;
+    private float yaw; // Rotación acumulada en el eje Y (horizontal)
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-
 
         // Configuración necesaria para que resuelva colisiones correctamente
         rb.isKinematic = false;
@@ -25,6 +29,11 @@ public class Movement : MonoBehaviour
 
         collider = GetComponent<BoxCollider>();
 
+        yaw = transform.eulerAngles.y;
+
+        // Oculta y bloquea el cursor en el centro de la pantalla
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Update()
@@ -34,8 +43,10 @@ public class Movement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        RotateRigidbody();
         MoveRigidbody();
     }
+
     private void ReadInput()
     {
         inputDirection = Vector3.zero;
@@ -61,6 +72,16 @@ public class Movement : MonoBehaviour
         }
 
         inputDirection = inputDirection.normalized;
+
+        // Lee el movimiento horizontal del mouse
+        mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity;
+    }
+
+    private void RotateRigidbody()
+    {
+        yaw += mouseX;
+        Quaternion targetRotation = Quaternion.Euler(0f, yaw, 0f);
+        rb.MoveRotation(targetRotation);
     }
 
     private void MoveRigidbody()

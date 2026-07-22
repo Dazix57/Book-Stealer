@@ -18,6 +18,11 @@ public class EnemyController : MonoBehaviour
 
     private NavMeshAgent enemyAgent;
 
+    // Atributos de patrulla
+    public Transform[] points;
+    private int destPoint = 0;
+    private int repeatCount = 0;
+
     void Start()
     {
         // Valores predeterminados
@@ -31,12 +36,20 @@ public class EnemyController : MonoBehaviour
 
         // Referencia al agente de IA
         enemyAgent = GetComponent<NavMeshAgent>();
+
+        // Disabling auto-braking allows for continuous movement
+        // between points (i.e. the agent doesn't slow down as it
+        // approaches a destination point).
+        enemyAgent.autoBraking = false;
+
+        GotoNextPoint();
     }
 
     void Update()
     {
         PlayerSeen();
         FollowPlayer();
+        Patrol();
     }
 
     void PlayerSeen()
@@ -68,6 +81,55 @@ public class EnemyController : MonoBehaviour
         {
             enemyAgent.SetDestination(player.transform.position);
             enemyAgent.speed = speed;
+        }
+    }
+
+    void GotoNextPoint()
+    {
+        // Returns if no points have been set up
+        if (points.Length == 0)
+            return;
+
+        // Set the agent to go to the currently selected destination.
+        enemyAgent.SetDestination(points[destPoint].position);
+
+        int newDestPoint = destPoint;
+
+        if (points.Length > 1)
+        {
+            // Si el mismo punto ya se repitió 1 vez,
+            // se prohíbe elegirlo de nuevo (forzamos un punto distinto).
+            bool forceDifferent = repeatCount == 1;
+
+            do
+            {
+                newDestPoint = Random.Range(0, points.Length);
+            }
+            while (forceDifferent && newDestPoint == destPoint);
+        }
+
+        // Actualiza el contador de repeticiones consecutivas
+        if (newDestPoint == destPoint)
+        {
+            repeatCount++;
+        }
+        else
+        {
+            repeatCount = 0;
+        }
+
+        destPoint = newDestPoint;
+    }
+
+    void Patrol()
+    {
+        // Solo patrulla si no ha visto al jugador
+        if (!isVisible)
+        {
+            // Choose the next destination point when the agent gets
+            // close to the current one.
+            if (!enemyAgent.pathPending && enemyAgent.remainingDistance < 0.5f)
+                GotoNextPoint();
         }
     }
 }
