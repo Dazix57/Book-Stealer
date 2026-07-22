@@ -6,30 +6,37 @@ public class EnemyController : MonoBehaviour
 
     // Atributos personalizables
     [SerializeField]
-    private float speed;
+    private float chaseMultiplier = 4.0f;
     [SerializeField]
-    private float fieldOfView;
+    private float timerDuration = 5.0f;
     [SerializeField]
-    private float viewDistance;
+    private float fieldOfView = 60.0f;
+    [SerializeField]
+    private float viewDistance = 5.0f;
+    [SerializeField]
+    private Transform[] points;
+
 
     // Atributos de control
-    private bool isVisible;
     private GameObject player;
-
+    private Timer chaseTimer;
     private NavMeshAgent enemyAgent;
 
-    // Atributos de patrulla
-    public Transform[] points;
-    private int destPoint = 0;
-    private int repeatCount = 0;
+    // Atributos de patrullaje
+    private int destPoint;
+    private int repeatCount;
+    private bool inChase;
 
     void Start()
     {
         // Valores predeterminados
-        speed = 0.5f;
-        fieldOfView = 60.0f;
-        viewDistance = 5.0f;
-        isVisible = false;
+        destPoint = 0;
+        repeatCount = 0;
+        inChase = false;
+
+        // Componente de temporizador
+        chaseTimer = gameObject.AddComponent<Timer>();
+        chaseTimer.Duration = timerDuration;
 
         // Referencia al jugador
         player = GameObject.FindGameObjectWithTag("Player");
@@ -48,49 +55,65 @@ public class EnemyController : MonoBehaviour
     void Update()
     {
         PlayerSeen();
-        FollowPlayer();
-        Patrol();
     }
 
     void PlayerSeen()
     {
         Vector3 directionToPlayer = player.transform.position - transform.position;
-        Vector3 rayDir = directionToPlayer.normalized * viewDistance;
+        Vector3 rayDir = directionToPlayer.normalized;
         
         RaycastHit hit;
 
         float angle = Vector3.Angle(transform.forward, directionToPlayer);
 
         // DEBUG: Revisa la trayectoria del ray.
-        Debug.DrawRay(transform.position, rayDir, Color.red);
+        Debug.DrawRay(transform.position, rayDir * viewDistance, Color.red);
 
         // DEBUG: Revisa el angulo formado con respecto al eje rojo del gameObject y el jugador.
         Debug.Log("Angle: " + angle);
 
-        if(Physics.Raycast(transform.position, rayDir, out hit, viewDistance) // Revisa si hay una colisión con un collider
-            && hit.collider.gameObject.CompareTag("Player") // Revisa que el gameObject sea el jugador
-            && angle <= fieldOfView) // Revisa que esta en el rango de visión
+        bool isVisible = Physics.Raycast(transform.position, rayDir, out hit, viewDistance) // Revisa si hay una colisión con un collider
+            && hit.collider.gameObject.CompareTag("Player") // Revisa que el collider del gameObject sea de el jugador
+            && angle <= fieldOfView; // Revisa que esta en el rango de visión
+            
+        if(isVisible && !chaseTimer.Running)
         {
-            isVisible = true;
+            chaseTimer.Run(); // Inicia el tiempo de persecución
+        }
+
+        if(chaseTimer.Running)
+        {
+            if(!inChase)
+            {
+                enemyAgent.speed *= chaseMultiplier; // Aumenta Velocidad en persecución
+                viewDistance *= chaseMultiplier; // Aumenta la distancia de detección
+                inChase = true;
+            }
+            FollowPlayer();
+        }
+        else
+        {
+            if(inChase)
+            {
+                // Retorna los valores a predeterminado
+                enemyAgent.speed /= chaseMultiplier;
+                viewDistance /= chaseMultiplier;
+                inChase = false;
+            }
+            Patrol();
         }
     }
 
     void FollowPlayer()
     {
-        if(isVisible)
-        {
-            enemyAgent.SetDestination(player.transform.position);
-            enemyAgent.speed = speed;
-        }
+        enemyAgent.SetDestination(player.transform.position);
     }
 
     void GotoNextPoint()
     {
-        // Returns if no points have been set up
         if (points.Length == 0)
             return;
 
-        // Set the agent to go to the currently selected destination.
         enemyAgent.SetDestination(points[destPoint].position);
 
         int newDestPoint = destPoint;
@@ -117,19 +140,16 @@ public class EnemyController : MonoBehaviour
         {
             repeatCount = 0;
         }
-
         destPoint = newDestPoint;
     }
 
     void Patrol()
     {
-        // Solo patrulla si no ha visto al jugador
-        if (!isVisible)
+        // Choose the next destination point when the agent gets
+        // close to the current one.
+        if(!enemyAgent.pathPending && enemyAgent.remainingDistance < 0.5f)
         {
-            // Choose the next destination point when the agent gets
-            // close to the current one.
-            if (!enemyAgent.pathPending && enemyAgent.remainingDistance < 0.5f)
-                GotoNextPoint();
+            GotoNextPoint();
         }
     }
 }
