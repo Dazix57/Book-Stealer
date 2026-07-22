@@ -6,39 +6,36 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private float speed = 10f;
 
-    [SerializeField]
-    private bool useRigidbody = false;
-
-    [SerializeField]
     private Rigidbody rb;
-
+    private BoxCollider collider;
     private Vector3 inputDirection;
 
     private void Awake()
     {
-        if (useRigidbody && rb == null)
-        {
-            rb = GetComponent<Rigidbody>();
-        }
+        rb = GetComponent<Rigidbody>();
+
+
+        // Configuración necesaria para que resuelva colisiones correctamente
+        rb.isKinematic = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        // Evita que la física rote el personaje al chocar contra otros objetos
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+
+        collider = GetComponent<BoxCollider>();
+
     }
 
     private void Update()
     {
         ReadInput();
-        if (!useRigidbody)
-        {
-            MoveTransform();
-        }
     }
 
     private void FixedUpdate()
     {
-        if (useRigidbody)
-        {
-            MoveRigidbody();
-        }
+        MoveRigidbody();
     }
-
     private void ReadInput()
     {
         inputDirection = Vector3.zero;
@@ -66,19 +63,8 @@ public class Movement : MonoBehaviour
         inputDirection = inputDirection.normalized;
     }
 
-    private void MoveTransform()
-    {
-        Vector3 move = (transform.forward * inputDirection.z + transform.right * inputDirection.x) * speed * Time.deltaTime;
-        transform.position += move;
-    }
-
     private void MoveRigidbody()
     {
-        if (rb == null)
-        {
-            return;
-        }
-
         Vector3 velocity = (transform.forward * inputDirection.z + transform.right * inputDirection.x) * speed;
         rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
     }

@@ -12,7 +12,7 @@ public class Follow : MonoBehaviour
     private float viewDistance;
 
     // Atributos de control
-    private bool isFollowed;
+    private bool isVisible;
     private GameObject player;
 
     void Start()
@@ -20,8 +20,8 @@ public class Follow : MonoBehaviour
         // Valores predeterminados
         speed = 5.0f;
         fieldOfView = 60.0f;
-        viewDistance = 3.0f;
-        isFollowed = false;
+        viewDistance = 5.0f;
+        isVisible = false;
 
         // Referencia al jugador
         player = GameObject.FindGameObjectWithTag("MainPlayer");
@@ -35,28 +35,30 @@ public class Follow : MonoBehaviour
 
     void PlayerSeen()
     {
-        Vector3 directionToPlayer = (player.transform.position - transform.position).normalized;
-        Vector3 rayEnd = transform.position + directionToPlayer * viewDistance;
+        Vector3 directionToPlayer = player.transform.position - transform.position;
+        Vector3 rayDir = directionToPlayer.normalized * viewDistance;
+        
+        RaycastHit hit;
+
+        float angle = Vector3.Angle(transform.forward, directionToPlayer);
 
         // DEBUG: Revisa la trayectoria del ray.
-        Debug.DrawRay(transform.position, rayEnd, Color.red);
-
-        Vector3 npcToPlayer = player.transform.position - transform.position;
-        float angle = Vector3.Angle(transform.right, npcToPlayer);
+        Debug.DrawRay(transform.position, rayDir, Color.red);
 
         // DEBUG: Revisa el angulo formado con respecto al eje rojo del gameObject y el jugador.
         Debug.Log("Angle: " + angle);
 
-        if (Physics.Raycast(transform.position, directionToPlayer, out RaycastHit hit, viewDistance) 
-        && hit.collider.CompareTag("MainPlayer") && angle > fieldOfView && angle < fieldOfView * 2)
+        if(Physics.Raycast(transform.position, rayDir, out hit, viewDistance) // Revisa si hay una colisión con un collider
+            && hit.collider.gameObject.CompareTag("MainPlayer") // Revisa que el gameObject sea el jugador
+            && angle <= fieldOfView) // Revisa que esta en el rango de visión
         {
-            isFollowed = true;
+            isVisible = true;
         }
     }
 
     void FollowPlayer()
     {
-        if(isFollowed)
+        if(isVisible)
         {
             transform.position = Vector3.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
         }
