@@ -1,6 +1,7 @@
 using UnityEngine;
+using UnityEngine.AI;
 
-public class Follow : MonoBehaviour
+public class EnemyController : MonoBehaviour
 {
 
     // Atributos personalizables
@@ -15,16 +16,21 @@ public class Follow : MonoBehaviour
     private bool isVisible;
     private GameObject player;
 
+    private NavMeshAgent enemyAgent;
+
     void Start()
     {
         // Valores predeterminados
-        speed = 5.0f;
+        speed = 0.5f;
         fieldOfView = 60.0f;
         viewDistance = 5.0f;
         isVisible = false;
 
         // Referencia al jugador
-        player = GameObject.FindGameObjectWithTag("MainPlayer");
+        player = GameObject.FindGameObjectWithTag("Player");
+
+        // Referencia al agente de IA
+        enemyAgent = GetComponent<NavMeshAgent>();
     }
 
     void Update()
@@ -49,7 +55,7 @@ public class Follow : MonoBehaviour
         Debug.Log("Angle: " + angle);
 
         if(Physics.Raycast(transform.position, rayDir, out hit, viewDistance) // Revisa si hay una colisión con un collider
-            && hit.collider.gameObject.CompareTag("MainPlayer") // Revisa que el gameObject sea el jugador
+            && hit.collider.gameObject.CompareTag("Player") // Revisa que el gameObject sea el jugador
             && angle <= fieldOfView) // Revisa que esta en el rango de visión
         {
             isVisible = true;
@@ -60,7 +66,8 @@ public class Follow : MonoBehaviour
     {
         if(isVisible)
         {
-            transform.position = Vector3.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
+            enemyAgent.SetDestination(player.transform.position);
+            enemyAgent.speed = speed;
         }
     }
 }
