@@ -1,8 +1,13 @@
 using System;
+using System.Collections;
+using System.Linq;
 using TMPro;
+using Unity.VisualScripting;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 public class InitializeMenu : MonoBehaviour
 {
@@ -11,13 +16,20 @@ public class InitializeMenu : MonoBehaviour
     [SerializeField]
     private GameObject pauseMenuPreFab;
 
-    private MenuOptionsEnum[] options = (MenuOptionsEnum[]) Enum.GetValues(typeof(MenuOptionsEnum));
+    private MenuOptionsEnum[] pauseMenuOptions = 
+    (MenuOptionsEnum[]) Enum.GetValues(typeof(MenuOptionsEnum));
+
+    private ConfirmationOptionsEnum[] confirmationMenuOptions = 
+    (ConfirmationOptionsEnum[]) Enum.GetValues(typeof(ConfirmationOptionsEnum));
+
 
     private GameObject pauseMenu;
     private GameObject mainPanel;
     private GameObject confirmationPanel;
 
-    private int currentSelection = 0;
+    private bool isPausedMenuActive = false;
+    private bool isConfirmationMenuActive = false;
+    private int currentIndex = 0;
 
     void Awake()
     {
@@ -40,77 +52,109 @@ public class InitializeMenu : MonoBehaviour
 
     void Update()
     {
-        if (mainPanel == null) return;
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (isConfirmationMenuActive)
+            {
+                EnableConfirmationMenu(false);
+                isConfirmationMenuActive = false;
+            }
+            else if (isPausedMenuActive)
+            {
+                EnablePauseMenu(false);
+                isPausedMenuActive = false;
+            }
+            else
+            {
+                EnablePauseMenu(true);
+            }
+        }
 
-        if (Keyboard.current.escapeKey.wasPressedThisFrame && !mainPanel.activeSelf)
+        if (isConfirmationMenuActive)
         {
-            mainPanel.SetActive(true);
+            Selection(confirmationPanel, confirmationMenuOptions);
         }
-        else if (Keyboard.current.escapeKey.wasPressedThisFrame && mainPanel.activeSelf)
+        else if (isPausedMenuActive)
         {
-            mainPanel.SetActive(false);
-        }
-        else if (Keyboard.current.escapeKey.wasPressedThisFrame && mainPanel.activeSelf && confirmationPanel.activeSelf)
-        {
-            confirmationPanel.SetActive(false);
-        }
-
-        if (mainPanel.activeSelf)
-        {
-            ReadInput();
+            Selection(mainPanel, pauseMenuOptions);
         }
     }
 
-    void ReadInput()
+    void Selection<T>(GameObject panel, T[] options)
     {
+    TextMeshProUGUI currentButton = GetButtonText(panel, options[currentIndex]);
 
-        if (Keyboard.current.wKey.wasPressedThisFrame && currentSelection > 0)
+    if (Keyboard.current.wKey.wasPressedThisFrame && currentIndex > 0)
+    {
+        // Pone blanco culquier opción que no sea la primera (options[i] : i > 0) 
+        currentButton.color = Color.white;
+        currentIndex--;
+        // Pone amarillo la opción anterior (options[i - 1])
+        GetButtonText(panel, options[currentIndex]).color = Color.yellow;
+    }
+    else if (Keyboard.current.sKey.wasPressedThisFrame && currentIndex < options.Length - 1)
+    {
+        // Pone blanco cualquier opción que no sea la última (options[i] : i < options.Length)
+        currentButton.color = Color.white;
+        currentIndex++;
+        // Pone amarillo la opción siguiente (options[i - 1])
+        GetButtonText(panel, options[currentIndex]).color = Color.yellow;
+    }
+    else if (currentIndex == 0)
         {
-            currentSelection -= 1;
+            currentButton.color = Color.yellow;
         }
-        else if (Keyboard.current.sKey.wasPressedThisFrame && currentSelection < options.Length)
+
+    if (Keyboard.current.enterKey.wasPressedThisFrame)
         {
-            currentSelection += 1;
+            ReadInput(options[currentIndex]);
         }
+    }
 
-        switch(options[currentSelection])
+    void ResetSelection<T>(GameObject panel, T[]options)
+    {
+        GetButtonText(panel, options[currentIndex]).color = Color.white;
+    }
+
+    TextMeshProUGUI GetButtonText<T>(GameObject panel, T option)
+    {
+        // Devuelve el boton del canval perteneciente al panel respectivo
+        return panel.transform.Find($"{option}Button/{option}").gameObject.GetComponent<TextMeshProUGUI>();
+    }
+
+    void ReadInput<T>(T currentSelection)
+    {
+        switch(currentSelection)
         {
-            case MenuOptionsEnum.None:
-            return;
-
             case MenuOptionsEnum.Continue:
-            TextMeshProUGUI continueButton = 
-            mainPanel.transform.Find($"ContinueButton/{options[currentSelection].ToString()}").gameObject.GetComponent<TextMeshProUGUI>();
-            continueButton.color = Color.yellow;
-            break;
-
-            
-            case MenuOptionsEnum.Options:
-            TextMeshProUGUI optionsButton = 
-            mainPanel.transform.Find($"OptionsButton/{options[currentSelection].ToString()}").gameObject.GetComponent<TextMeshProUGUI>();
-            optionsButton.color = Color.yellow;
-            break;
-
-            
-            case MenuOptionsEnum.LastCheckPoint:
-            TextMeshProUGUI lastCheckpointButton = 
-            mainPanel.transform.Find($"LastCheckPointButton/{options[currentSelection].ToString()}").gameObject.GetComponent<TextMeshProUGUI>();
-            lastCheckpointButton.color = Color.yellow;
-            break;
-
-            
-            case MenuOptionsEnum.MainMenu:
-            TextMeshProUGUI mainMenuButton = 
-            mainPanel.transform.Find($"MainMenuButton/{options[currentSelection].ToString()}").gameObject.GetComponent<TextMeshProUGUI>();
-            mainMenuButton.color = Color.yellow;
-            break;
-
-
-            case MenuOptionsEnum.Exit:
-            TextMeshProUGUI exitButton = 
-            mainPanel.transform.Find($"ExitButton/{options[currentSelection].ToString()}").gameObject.GetComponent<TextMeshProUGUI>();
-            exitButton.color = Color.yellow;
+            EnablePauseMenu(false);
             break;
         }
+    }
+
+    void EnablePauseMenu(bool enable)
+    {
+        isPausedMenuActive = enable;
+
+        // Revisa si el menu de pausa esta activo
+        if(isPausedMenuActive)
+        {
+            // Activa el menu de pausa
+            mainPanel.SetActive(enable);
+            Time.timeScale = 0;
+        }
+        else
+        {
+            // Desactiva el menu de pausa
+            mainPanel.SetActive(enable);
+            Time.timeScale = 1;
+        }
+    }
+
+    void EnableConfirmationMenu(bool enable)
+    {
+        // Activa la ventana de confirmación
+        confirmationPanel.SetActive(enable);
+        Time.timeScale = 0;
     }
 }
