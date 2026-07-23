@@ -6,13 +6,13 @@ public class EnemyController : MonoBehaviour
 
     // Atributos personalizables
     [SerializeField]
-    private float chaseMultiplier = 4.0f;
+    private float chaseMultiplier;
     [SerializeField]
-    private float timerDuration = 5.0f;
+    private float timerDuration;
     [SerializeField]
-    private float fieldOfView = 60.0f;
+    private float fieldOfView;
     [SerializeField]
-    private float viewDistance = 5.0f;
+    private float viewDistance;
     [SerializeField]
     private Transform[] points;
 
@@ -26,6 +26,8 @@ public class EnemyController : MonoBehaviour
     private int destPoint;
     private int repeatCount;
     private bool inChase;
+
+    //private CapsuleCollider collider;
 
     void Start()
     {
@@ -49,6 +51,15 @@ public class EnemyController : MonoBehaviour
         // approaches a destination point).
         enemyAgent.autoBraking = false;
 
+        //collider = GetComponent<CapsuleCollider>();
+
+        // Set values
+
+        viewDistance = 5.0f;
+        fieldOfView = 60.0f;
+        timerDuration = 5.0f;
+        chaseMultiplier = 4.0f;
+
         GotoNextPoint();
     }
 
@@ -61,20 +72,33 @@ public class EnemyController : MonoBehaviour
     {
         Vector3 directionToPlayer = player.transform.position - transform.position;
         Vector3 rayDir = directionToPlayer.normalized;
-        
         RaycastHit hit;
 
         float angle = Vector3.Angle(transform.forward, directionToPlayer);
 
+        float LocalViewDistance = viewDistance;
+        float LocalAngle = fieldOfView;
+
+        Movement movement = player.GetComponent<Movement>();
+        if (movement.IsCrouching)
+        {
+            LocalViewDistance *= 0.8f;
+            LocalAngle *= 0.6f;
+            Debug.Log("CROUCHING so new values are "+LocalViewDistance+"..."+LocalAngle);
+        } else
+        {
+            Debug.Log("NOPE! "+LocalViewDistance+"..."+LocalAngle);
+        }
+        
         // DEBUG: Revisa la trayectoria del ray.
-        Debug.DrawRay(transform.position, rayDir * viewDistance, Color.red);
+        Debug.DrawRay(transform.position, rayDir * LocalViewDistance, Color.red);
 
         // DEBUG: Revisa el angulo formado con respecto al eje rojo del gameObject y el jugador.
-        Debug.Log("Angle: " + angle);
-
-        bool isVisible = Physics.Raycast(transform.position, rayDir, out hit, viewDistance) // Revisa si hay una colisión con un collider
+        //Debug.Log("Angle: " + angle);
+        
+        bool isVisible = Physics.Raycast(transform.position, rayDir, out hit, LocalViewDistance) // Revisa si hay una colisión con un collider
             && hit.collider.gameObject.CompareTag("Player") // Revisa que el collider del gameObject sea de el jugador
-            && angle <= fieldOfView; // Revisa que esta en el rango de visión
+            && angle <= LocalAngle; // Revisa que esta en el rango de visión
             
         if(isVisible && !chaseTimer.Running)
         {
