@@ -30,6 +30,7 @@ public class InitializeMenu : MonoBehaviour
     private bool isPausedMenuActive = false;
     private bool isConfirmationMenuActive = false;
     private int currentIndex = 0;
+    private int lastIndex = 0;
 
     void Awake()
     {
@@ -54,15 +55,10 @@ public class InitializeMenu : MonoBehaviour
     {
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (isConfirmationMenuActive)
-            {
-                EnableConfirmationMenu(false);
-                isConfirmationMenuActive = false;
-            }
-            else if (isPausedMenuActive)
+            if (isPausedMenuActive && !isConfirmationMenuActive)
             {
                 EnablePauseMenu(false);
-                isPausedMenuActive = false;
+                ResetSelection(mainPanel, pauseMenuOptions);
             }
             else
             {
@@ -111,9 +107,24 @@ public class InitializeMenu : MonoBehaviour
         }
     }
 
-    void ResetSelection<T>(GameObject panel, T[]options)
+    void ResetSelection<T>(GameObject panel, T[] options, int resetToIndex = 0)
     {
+        // Pone en blanco el botón que estaba resaltado antes de resetear
         GetButtonText(panel, options[currentIndex]).color = Color.white;
+
+        // Reinicia el índice al valor indicado (por defecto 0, salvo que se especifique otro)
+        currentIndex = resetToIndex;
+
+        // Apaga únicamente la bandera correspondiente al panel que se está reseteando,
+        // sin afectar el estado del otro menú (ej. confirmación se cierra sin cerrar pausa)
+        if (panel == confirmationPanel)
+        {
+            isConfirmationMenuActive = false;
+        }
+        else if (panel == mainPanel)
+        {
+            isPausedMenuActive = false;
+        }
     }
 
     TextMeshProUGUI GetButtonText<T>(GameObject panel, T option)
@@ -128,6 +139,30 @@ public class InitializeMenu : MonoBehaviour
         {
             case MenuOptionsEnum.Continue:
             EnablePauseMenu(false);
+            ResetSelection(mainPanel, pauseMenuOptions);
+            break;
+
+            case MenuOptionsEnum.Options:
+            Debug.Log("En proceso ...");
+            break;
+
+            case MenuOptionsEnum.LastCheckPoint:
+            case MenuOptionsEnum.MainMenu:
+            case MenuOptionsEnum.Exit:
+            EnableConfirmationMenu(true);
+            lastIndex = currentIndex;
+            currentIndex = 0;
+            isConfirmationMenuActive = true;
+            break;
+
+            case ConfirmationOptionsEnum.Yes:
+            Debug.Log("En proceso ... (Yes)");
+            break;
+
+            case ConfirmationOptionsEnum.No:
+            EnableConfirmationMenu(false);
+            ResetSelection(confirmationPanel, confirmationMenuOptions, lastIndex);
+            Debug.Log("En proceso ... (No)");
             break;
         }
     }
