@@ -23932,7 +23932,7 @@ CapsuleCollider:
   m_ProvidesContacts: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.5
+  m_Radius: 1
   m_Height: 5
   m_Direction: 1
   m_Center: {x: 0, y: -1.25, z: 0}
@@ -27570,7 +27570,7 @@ PrefabInstance:
     - target: {fileID: 3826269160111257681, guid: 67e510b5a3d37574481841de345cd7fc, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: f96821bbefeea864b9b418af4b8615ac, type: 2}
+      objectReference: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 4437245191986329657, guid: 67e510b5a3d37574481841de345cd7fc, type: 3}
       propertyPath: m_Speed
       value: 12
@@ -27708,6 +27708,10 @@ PrefabInstance:
     - target: {fileID: 6248294369018384924, guid: c0d808b806a60044bbb2f8f0c4684928, type: 3}
       propertyPath: m_Name
       value: NavMeshSurface
+      objectReference: {fileID: 0}
+    - target: {fileID: 7812590495056322762, guid: c0d808b806a60044bbb2f8f0c4684928, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7812590495056322762, guid: c0d808b806a60044bbb2f8f0c4684928, type: 3}
       propertyPath: m_NavMeshData
