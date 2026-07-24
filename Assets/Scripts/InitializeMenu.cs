@@ -5,7 +5,9 @@ using TMPro;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 
@@ -49,6 +51,10 @@ public class InitializeMenu : MonoBehaviour
 
         mainPanel = pauseMenu.transform.Find("PauseCanvas/PausePanel").gameObject;
         confirmationPanel = pauseMenu.transform.Find("PauseCanvas/ConfirmationPanel").gameObject;
+
+        EnsureInputModule();
+        AddHoverEvents(mainPanel, pauseMenuOptions);
+        AddHoverEvents(confirmationPanel, confirmationMenuOptions);
     }
 
     void Update()
@@ -129,8 +135,69 @@ public class InitializeMenu : MonoBehaviour
 
     TextMeshProUGUI GetButtonText<T>(GameObject panel, T option)
     {
-        // Devuelve el boton del canval perteneciente al panel respectivo
+        // Devuelve el boton del canvas perteneciente al panel respectivo
         return panel.transform.Find($"{option}Button/{option}").gameObject.GetComponent<TextMeshProUGUI>();
+    }
+
+    void EnsureInputModule()
+    {
+        // El EventSystem del prefab no trae ningún Input Module asignado;
+        // sin uno, ningún evento de puntero (PointerEnter, etc.) se dispara jamás.
+        GameObject eventSystemObj = pauseMenu.transform.Find("PauseEventSystem").gameObject;
+
+        if (eventSystemObj.GetComponent<InputSystemUIInputModule>() == null)
+        {
+            InputSystemUIInputModule inputModule = eventSystemObj.AddComponent<InputSystemUIInputModule>();
+            inputModule.AssignDefaultActions();
+        }
+    }
+
+    void AddHoverEvents<T>(GameObject panel, T[] options)
+    {
+        for (int i = 0; i < options.Length; i++)
+        {
+            int index = i; // copia local: evita que el closure capture la misma "i" en todas las iteraciones
+
+            GameObject buttonObj = panel.transform.Find($"{options[i]}Button").gameObject;
+            EventTrigger trigger = buttonObj.AddComponent<EventTrigger>();
+
+            EventTrigger.Entry hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            hoverEntry.callback.AddListener((_) => OnHoverOption(panel, options, index));
+            trigger.triggers.Add(hoverEntry);
+
+            // El click solo llega aquí si el puntero está realmente sobre este botón
+            // (lo resuelve el GraphicRaycaster), a diferencia de leer Mouse.current.leftButton
+            // en Update(), que dispara sin importar dónde esté el mouse.
+            EventTrigger.Entry clickEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+            clickEntry.callback.AddListener((_) => OnClickOption(panel, options, index));
+            trigger.triggers.Add(clickEntry);
+        }
+    }
+
+    bool IsPanelActive(GameObject panel)
+    {
+        // ConfirmationPanel no desactiva PausePanel al abrirse, así que ambos
+        // quedan activos a la vez con distinta cantidad de opciones.
+        return (panel == confirmationPanel && isConfirmationMenuActive) ||
+               (panel == mainPanel && isPausedMenuActive && !isConfirmationMenuActive);
+    }
+
+    void OnHoverOption<T>(GameObject panel, T[] options, int hoverIndex)
+    {
+        if (!IsPanelActive(panel) || hoverIndex == currentIndex) return;
+
+        GetButtonText(panel, options[currentIndex]).color = Color.white;
+        currentIndex = hoverIndex;
+        GetButtonText(panel, options[currentIndex]).color = Color.yellow;
+    }
+
+    void OnClickOption<T>(GameObject panel, T[] options, int index)
+    {
+        if (!IsPanelActive(panel)) return;
+
+        // Sincroniza currentIndex/resaltado con el botón clickeado antes de confirmarlo
+        OnHoverOption(panel, options, index);
+        ReadInput(options[index]);
     }
 
     void ReadInput<T>(T currentSelection)
@@ -148,7 +215,6 @@ public class InitializeMenu : MonoBehaviour
 
             case MenuOptionsEnum.LastCheckPoint:
             case MenuOptionsEnum.MainMenu:
-            case MenuOptionsEnum.Exit:
             EnableConfirmationMenu(true);
             lastIndex = currentIndex;
             currentIndex = 0;
@@ -177,12 +243,20 @@ public class InitializeMenu : MonoBehaviour
             // Activa el menu de pausa
             mainPanel.SetActive(enable);
             Time.timeScale = 0;
+
+            // Libera el cursor para poder usar el mouse en el menú
+            UnityEngine.Cursor.lockState = CursorLockMode.None;
+            UnityEngine.Cursor.visible = true;
         }
         else
         {
             // Desactiva el menu de pausa
             mainPanel.SetActive(enable);
             Time.timeScale = 1;
+
+            // Vuelve a bloquear y ocultar el cursor para el control de cámara
+            UnityEngine.Cursor.lockState = CursorLockMode.Locked;
+            UnityEngine.Cursor.visible = false;
         }
     }
 

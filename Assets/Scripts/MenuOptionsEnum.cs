@@ -6,5 +6,4 @@ public enum MenuOptionsEnum
     Options,
     LastCheckPoint,
     MainMenu,
-    Exit,
 }
