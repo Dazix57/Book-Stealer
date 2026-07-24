@@ -20,6 +20,9 @@ public class Movement : MonoBehaviour
     public bool IsParrying;
     public bool IsCrouching;
 
+    public bool CanMove = true;
+    public bool CanRotate = true;
+
     public float PushForce;
 
     [SerializeField] private Key CrouchKey;
@@ -91,8 +94,8 @@ public class Movement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        RotateRigidbody();
-        MoveRigidbody();
+        if (CanRotate) RotateRigidbody();
+        if (CanMove) MoveRigidbody();
     }
 
     
