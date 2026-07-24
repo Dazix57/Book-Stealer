@@ -27,9 +27,13 @@ public class EnemyController : MonoBehaviour
     private int repeatCount;
     private bool inChase;
 
+    private Light EnemyLight;
+    private Color InitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
+    private Color EngageColor = Color.red;
+
     //private CapsuleCollider collider;
 
-    void Start()
+    void Awake()
     {
         // Valores predeterminados
         destPoint = 0;
@@ -55,10 +59,12 @@ public class EnemyController : MonoBehaviour
 
         // Set values
 
-        viewDistance = 5.0f;
+        viewDistance = 15f;
         fieldOfView = 60.0f;
         timerDuration = 5.0f;
-        chaseMultiplier = 4.0f;
+        chaseMultiplier = 3.0f;
+
+        EnemyLight = GetComponent<Light>();
 
         GotoNextPoint();
     }
@@ -83,7 +89,7 @@ public class EnemyController : MonoBehaviour
         float sneakMultiplier = movement.SneakFOVMultiplier;
         LocalViewDistance *= sneakMultiplier;
         LocalAngle *= sneakMultiplier;
-        Debug.Log("Current FOV & Angle: "+LocalViewDistance+", "+LocalAngle);
+        //Debug.Log("Current FOV & Angle: "+LocalViewDistance+", "+LocalAngle);
 
         // DEBUG: Revisa la trayectoria del ray.
         Debug.DrawRay(transform.position, rayDir * LocalViewDistance, Color.red);
@@ -102,6 +108,7 @@ public class EnemyController : MonoBehaviour
 
         if(chaseTimer.Running)
         {
+            EnemyLight.color = EngageColor;
             if(!inChase)
             {
                 enemyAgent.speed *= chaseMultiplier; // Aumenta Velocidad en persecución
@@ -119,6 +126,7 @@ public class EnemyController : MonoBehaviour
                 viewDistance /= chaseMultiplier;
                 inChase = false;
             }
+            EnemyLight.color = InitialColor;
             Patrol();
         }
     }

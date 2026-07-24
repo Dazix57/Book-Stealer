@@ -115,7 +115,7 @@ public class Movement : MonoBehaviour
 
                 Debug.Log("Parried monster...");
                 // Apply an instant force to send the box away
-                Enemy_RB.AddForce(pushDirection * 5000f); //* Enemy_RB.mass * Enemy_RB.linearDamping);
+                Enemy_RB.AddForce(pushDirection * 8000f); //* Enemy_RB.mass * Enemy_RB.linearDamping);
             } else
             {
                 TakeDamage(damagePerSecond * Time.fixedDeltaTime);
@@ -160,7 +160,7 @@ public class Movement : MonoBehaviour
         if (Keyboard.current[ParryKey].isPressed)
         {
             IsParrying = true;
-            Debug.Log("parrying");
+            //Debug.Log("parrying");
         } else
         {
             IsParrying = false;
