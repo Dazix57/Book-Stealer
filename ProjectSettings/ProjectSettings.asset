@@ -829,7 +829,8 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 1
   webEnableSubmoduleStrippingCompatibility: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Standalone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
@@ -929,11 +930,11 @@ PlayerSettings:
   activeInputHandler: 1
   windowsGamepadBackendHint: 0
   enableDirectStorage: 0
-  cloudProjectId: d0111e4c-3dd3-479f-9d86-e9058703f339
+  cloudProjectId: 526ceacb-d069-49ff-8086-9bc3d7735ecc
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Book Stealer 2026-07-21_13-42-23
-  organizationId: unity_883f387da2b230df9cf8
+  projectName: Book-Stealer
+  organizationId: ploconaman46
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}

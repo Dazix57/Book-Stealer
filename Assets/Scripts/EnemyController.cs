@@ -80,16 +80,11 @@ public class EnemyController : MonoBehaviour
         float LocalAngle = fieldOfView;
 
         Movement movement = player.GetComponent<Movement>();
-        if (movement.IsCrouching)
-        {
-            LocalViewDistance *= 0.8f;
-            LocalAngle *= 0.6f;
-            Debug.Log("CROUCHING so new values are "+LocalViewDistance+"..."+LocalAngle);
-        } else
-        {
-            Debug.Log("NOPE! "+LocalViewDistance+"..."+LocalAngle);
-        }
-        
+        float sneakMultiplier = movement.SneakFOVMultiplier;
+        LocalViewDistance *= sneakMultiplier;
+        LocalAngle *= sneakMultiplier;
+        Debug.Log("Current FOV & Angle: "+LocalViewDistance+", "+LocalAngle);
+
         // DEBUG: Revisa la trayectoria del ray.
         Debug.DrawRay(transform.position, rayDir * LocalViewDistance, Color.red);
 
