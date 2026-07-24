@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections; // <-- This is the missing line required for IEnumerator
+using System.Collections.Generic; // Required if you are using IEnumerator<T>
 using UnityEngine.InputSystem;
 
 public class Movement : MonoBehaviour
@@ -27,6 +29,21 @@ public class Movement : MonoBehaviour
     // Parry setup
     private float ParryDebounce = 0.0f;
     private float ParryCD = 5.0f;
+
+    // Health setup
+    [SerializeField] private float maxHealth = 100f;
+    [SerializeField] private float damagePerSecond = 25f;
+    private float currentHealth;
+    private bool isDead;
+
+    // Sneak meter setup
+    [SerializeField] private float sneakMultiplierBase = 0.5f;
+    [SerializeField] private float sneakDrainRate = 0.1f;
+    [SerializeField] private float sneakRegenRate = 0.05f;
+    private float sneakMeter;
+
+    // Only applies the sneak bonus while actively crouching; otherwise enemies see at full FOV.
+    public float SneakFOVMultiplier => IsCrouching ? sneakMeter : 1f;
 
     private void Awake()
     {
@@ -57,11 +74,19 @@ public class Movement : MonoBehaviour
         ParryKey = Key.F;
         CrouchKey = Key.LeftCtrl;
 
+        // Health setup
+        currentHealth = maxHealth;
+        isDead = false;
+        EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
+
+        // Sneak meter setup
+        sneakMeter = sneakMultiplierBase;
     }
 
     private void Update()
     {
         ReadInput();
+        UpdateSneakMeter();
     }
 
     private void FixedUpdate()
@@ -70,7 +95,8 @@ public class Movement : MonoBehaviour
         MoveRigidbody();
     }
 
-   
+    
+
     private void OnTriggerStay(Collider collision)
     {
         if (collision.CompareTag("Enemy"))
@@ -79,7 +105,7 @@ public class Movement : MonoBehaviour
             {
                 ParryDebounce = Time.time + ParryCD;
                 Rigidbody Enemy_RB = collision.GetComponent<Rigidbody>();
-
+                StartCoroutine(CooldownRoutine());
                 // Check if the object has a valid Rigidbody that is not kinematic
                 if (Enemy_RB == null ) return;
 
@@ -87,14 +113,14 @@ public class Movement : MonoBehaviour
                 pushDirection.y = 0; // Keep the push flat on the ground if needed
                 pushDirection.Normalize();
 
-                Debug.Log("outtie!");
+                Debug.Log("Parried monster...");
                 // Apply an instant force to send the box away
-                Enemy_RB.AddForce(pushDirection * 1000f); //* Enemy_RB.mass * Enemy_RB.linearDamping);
+                Enemy_RB.AddForce(pushDirection * 5000f); //* Enemy_RB.mass * Enemy_RB.linearDamping);
             } else
             {
-                Debug.Log("DIE!");
+                TakeDamage(damagePerSecond * Time.fixedDeltaTime);
             }
-            
+
         }
         
         // Example: Check if hitting an enemy using tags
@@ -103,6 +129,8 @@ public class Movement : MonoBehaviour
             // Handle damage or impact behavior
         //}
     }
+
+    
 
     private void ReadInput()
     {
@@ -142,7 +170,7 @@ public class Movement : MonoBehaviour
         if (Keyboard.current[CrouchKey].isPressed)
         {
             IsCrouching = true;
-            Debug.Log("crouching");
+            
         } else
         {
             IsCrouching = false;
@@ -153,6 +181,32 @@ public class Movement : MonoBehaviour
 
         // Lee el movimiento horizontal del mouse
         mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity;
+    }
+
+    private void TakeDamage(float amount)
+    {
+        if (isDead) return;
+
+        currentHealth = Mathf.Clamp(currentHealth - amount, 0f, maxHealth);
+        EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
+
+        if (currentHealth <= 0f)
+        {
+            isDead = true;
+            EventManager.RaisePlayerDeath();
+        }
+    }
+
+    private void UpdateSneakMeter()
+    {
+        if (IsCrouching)
+        {
+            sneakMeter = Mathf.Min(1f, sneakMeter + sneakDrainRate * Time.deltaTime);
+        }
+        else
+        {
+            sneakMeter = Mathf.Max(sneakMultiplierBase, sneakMeter - sneakRegenRate * Time.deltaTime);
+        }
     }
 
     private void RotateRigidbody()
@@ -169,4 +223,13 @@ public class Movement : MonoBehaviour
         //rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
     }
     
+    IEnumerator CooldownRoutine()
+    {
+
+
+        // Pause execution for the specified duration
+        yield return new WaitForSeconds(ParryCD);
+
+        Debug.Log("Parry Ready Again!");
+    }
 }
