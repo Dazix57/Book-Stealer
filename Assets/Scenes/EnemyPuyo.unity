@@ -501,6 +501,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HideOuts
   hidePromptPanelPreFab: {fileID: 100000001001, guid: b3e7a1c94f6d4a4db8f2c7d3e5a19f6c, type: 3}
+  hideSpeed: 5
+  canRotateCameraX: 1
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1404,6 +1406,8 @@ MonoBehaviour:
   mouseSensitivity: 2
   IsParrying: 0
   IsCrouching: 0
+  CanMove: 1
+  CanRotate: 1
   PushForce: 0
   CrouchKey: 0
   ParryKey: 0
