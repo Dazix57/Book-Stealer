@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,6 +15,9 @@ public class HideOut : MonoBehaviour
 
     [SerializeField]
     private bool canRotateCameraX = true;
+
+    [SerializeField]
+    private Transform[] faces;
 
     private bool inRange = false;
     private bool isHidden = false;
@@ -36,10 +40,14 @@ public class HideOut : MonoBehaviour
             if (isHidden)
             {
                 Unhide();
+                promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = "Press E to hide";
+
             }
             else
             {
                 Hide(transform.position);
+                promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = "Press E to exit";
+
             }
         }
     }
@@ -78,7 +86,34 @@ public class HideOut : MonoBehaviour
             StopCoroutine(hideRoutine);
         }
 
-        hideRoutine = StartCoroutine(TransitionRoutine(originalPos, originalRot, hideoutPos, transform.rotation, true));
+        Quaternion faceRot = GetClosestFaceRotation(hideoutPos, originalPos);
+
+        hideRoutine = StartCoroutine(TransitionRoutine(originalPos, originalRot, hideoutPos, faceRot, true));
+    }
+
+    // Elige la cara (Front, Right, etc.) cuya dirección hacia afuera esté más
+    // alineada con la posición del jugador, es decir, la cara desde la que se acercó.
+    Quaternion GetClosestFaceRotation(Vector3 hideoutPos, Vector3 playerPos)
+    {
+        if (faces == null || faces.Length == 0) return transform.rotation;
+
+        Vector3 toPlayer = (playerPos - hideoutPos).normalized;
+        Transform closestFace = null;
+        float bestDot = float.NegativeInfinity;
+
+        foreach (Transform face in faces)
+        {
+            if (face == null) continue;
+
+            float dot = Vector3.Dot(face.forward, toPlayer);
+            if (dot > bestDot)
+            {
+                bestDot = dot;
+                closestFace = face;
+            }
+        }
+
+        return closestFace != null ? closestFace.rotation : transform.rotation;
     }
 
     void Unhide()
@@ -122,6 +157,9 @@ public class HideOut : MonoBehaviour
         }
 
         player.transform.SetPositionAndRotation(endPos, endRot);
+
+        // Evita que RotateRigidbody salte de vuelta al yaw previo en cuanto se reactive CanRotate
+        if (movement != null) movement.SetYawFromRotation(endRot);
 
         if (hidingIntoSpot)
         {

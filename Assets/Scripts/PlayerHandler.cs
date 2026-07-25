@@ -219,6 +219,14 @@ public class Movement : MonoBehaviour
         rb.MoveRotation(targetRotation);
     }
 
+    // Sincroniza el yaw acumulado con una rotación aplicada externamente
+    // (ej. al esconderse), para que RotateRigidbody no salte de vuelta
+    // al valor de yaw anterior en cuanto se reactive CanRotate.
+    public void SetYawFromRotation(Quaternion rotation)
+    {
+        yaw = rotation.eulerAngles.y;
+    }
+
     private void MoveRigidbody()
     {
         Vector3 velocity = (transform.forward * inputDirection.z + transform.right * inputDirection.x) * speed;
