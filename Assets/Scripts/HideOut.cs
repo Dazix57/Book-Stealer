@@ -19,6 +19,9 @@ public class HideOut : MonoBehaviour
     [SerializeField]
     private Transform[] faces;
 
+    [SerializeField]
+    private EnemyController enemy;
+
     private bool inRange = false;
     private bool isHidden = false;
     private GameObject player;
@@ -40,14 +43,10 @@ public class HideOut : MonoBehaviour
             if (isHidden)
             {
                 Unhide();
-                promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = "Press E to hide";
-
             }
             else
             {
                 Hide(transform.position);
-                promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = "Press E to exit";
-
             }
         }
     }
@@ -57,6 +56,11 @@ public class HideOut : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             player = other.gameObject;
+
+            // El texto se decide aquí, con el valor real de isHidden en el momento
+            // en que el panel se vuelve a mostrar (no cuando se presionó E, ya que
+            // Unhide() no pone isHidden en false hasta que termina la animación).
+            promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = isHidden ? "Press E to exit" : "Press E to hide";
             promptPanel.SetActive(true);
             inRange = true;
         }
@@ -74,6 +78,7 @@ public class HideOut : MonoBehaviour
     void Hide(Vector3 hideoutPos)
     {
         if (player == null) return;
+        if (enemy != null && enemy.InChase) return;
 
         promptPanel.SetActive(false);
 

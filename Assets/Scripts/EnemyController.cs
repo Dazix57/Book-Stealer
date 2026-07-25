@@ -31,6 +31,12 @@ public class EnemyController : MonoBehaviour
     private Color InitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
     private Color EngageColor = Color.red;
 
+    // Estado público (consultado por otros scripts, ej. HideOut)
+    public bool InChase
+    {
+        get { return inChase; }
+    }
+
     //private CapsuleCollider collider;
 
     void Awake()
