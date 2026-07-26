@@ -4084,7 +4084,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 675f0c86da914adfb9f5514f626e3bfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InitializeMainMenu
-  gameSceneName: 
+  gameSceneName: EnemyPuyo
 --- !u!1 &7619378684388210781
 GameObject:
   m_ObjectHideFlags: 0
