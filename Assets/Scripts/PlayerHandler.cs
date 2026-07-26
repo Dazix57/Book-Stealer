@@ -2,8 +2,12 @@ using UnityEngine;
 using System.Collections; // <-- This is the missing line required for IEnumerator
 using System.Collections.Generic; // Required if you are using IEnumerator<T>
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
+using Unity.Mathematics;
+using TMPro;
+using Unity.AppUI.UI;
 
-public class Movement : MonoBehaviour
+public class PlayerHandler : MonoBehaviour
 {
     [SerializeField]
     private float speed;
@@ -17,17 +21,24 @@ public class Movement : MonoBehaviour
     private float mouseX;
     private float yaw; // Rotación acumulada en el eje Y (horizontal)
 
-    public bool IsParrying;
-    public bool IsCrouching;
+    [SerializeField]
+    private bool IsParrying;
+    [SerializeField]
+    private bool IsCrouching;
 
-    public bool CanMove = true;
-    public bool CanRotate = true;
+    [SerializeField]
+    private bool canMove = true;
+    [SerializeField]
+    private bool canRotate = true;
+    private bool inObjectiveArea = false;
 
-    public float PushForce;
+    [SerializeField]
+    private float PushForce;
 
     [SerializeField] private Key CrouchKey;
     [SerializeField] private Key ParryKey;
     [SerializeField] private Key PickUpKey;
+    [SerializeField] private Key ObjectiveMark;
 
     // Parry setup
     private float ParryDebounce = 0.0f;
@@ -44,6 +55,14 @@ public class Movement : MonoBehaviour
     [SerializeField] private float sneakDrainRate = 0.1f;
     [SerializeField] private float sneakRegenRate = 0.05f;
     private float sneakMeter;
+
+    private GameObject closestObjective = null;
+    private Timer markerTimer = null;
+    private Timer markerCooldown = null;
+    [SerializeField] private float coolDownDuration;
+
+    [SerializeField] private GameObject coolDownMessagePreFab;
+    private GameObject coolDownMessage;
 
     // Only applies the sneak bonus while actively crouching; otherwise enemies see at full FOV.
     public float SneakFOVMultiplier => IsCrouching ? sneakMeter : 1f;
@@ -84,12 +103,31 @@ public class Movement : MonoBehaviour
 
         // Sneak meter setup
         sneakMeter = sneakMultiplierBase;
+
+        // marker timer
+        markerTimer = GetComponent<Timer>();
+
+        // cooldown de activación
+        markerCooldown = gameObject.AddComponent<Timer>();
+        markerCooldown.Duration = coolDownDuration;
+
+        // Instancia del prefab 'coolDownMessagePreFab'
+        coolDownMessage = Instantiate<GameObject>(coolDownMessagePreFab, Camera.main.transform.position, Quaternion.identity);
+
     }
 
     private void Update()
     {
-        ReadInput();
+        // Deshabilita el player input si se esta en el menu de pausa
+        if (!GetComponent<InitializeMenu>().IsPausedMenuActive)
+        {
+            ReadInput();
+        }
+
         UpdateSneakMeter();
+
+        // revisa si puede enseñar el marcador del objetivo
+        EnableObjectiveMark();
     }
 
     private void FixedUpdate()
@@ -179,6 +217,12 @@ public class Movement : MonoBehaviour
             IsCrouching = false;
         }
 
+        // Revisa que el jugador pueda visualizar el marcador
+        if (Keyboard.current[ObjectiveMark].wasPressedThisFrame && !markerCooldown.Running)
+        {
+            CalculateObjectiveDistance();
+        }
+
 
         inputDirection = inputDirection.normalized;
 
@@ -242,5 +286,83 @@ public class Movement : MonoBehaviour
         yield return new WaitForSeconds(ParryCD);
 
         Debug.Log("Parry Ready Again!");
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("ObjectiveArea"))
+        {
+            inObjectiveArea = true;
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.CompareTag("ObjectiveArea"))
+        {
+            inObjectiveArea = false;
+        }
+    }
+
+    void CalculateObjectiveDistance()
+    {
+        // Revisa si NO esta en el area del objetivo
+        if (!inObjectiveArea)
+        {
+            List<GameObject> objectives = new(GameObject.FindGameObjectsWithTag("ObjectiveArea"));
+            Vector3 currentPosition = transform.position;
+            float closestDistance = Mathf.Infinity;
+
+            foreach (var area in objectives)
+            {
+                Vector3 areaPosition = area.transform.position;
+                float distance = Vector3.Distance(currentPosition, areaPosition);
+
+                if (distance <= closestDistance)
+                {
+                    closestObjective = area;
+                    closestDistance = distance;
+                }
+            }
+        markerTimer.Run();
+        markerCooldown.Run();
+        }
+    }
+
+    void EnableObjectiveMark()
+    {
+        if (closestObjective != null)
+        {
+            SpriteRenderer marker = closestObjective.GetComponentInChildren<SpriteRenderer>();
+
+            marker.enabled = false;
+
+            if(!markerTimer.Finished)
+            {
+                marker.enabled = true;
+            }
+            else
+            {
+                closestObjective = null;
+            }
+        }
+        else
+        {
+            coolDownMessage.transform.GetChild(0).gameObject.SetActive(markerCooldown.Running);
+            TextMeshProUGUI panel = coolDownMessage.transform.GetChild(0).GetComponentInChildren<TextMeshProUGUI>();
+            panel.text = $"Mark available in {Mathf.CeilToInt(markerCooldown.Remaining)} s";
+        }
+    }
+
+    public bool CanMove
+    {
+        get {return canMove;}
+        set {canMove = value;}
+    }
+
+    public bool CanRotate
+    {
+        get {return canRotate;}
+        set {canRotate = value;}
     }
 }

@@ -74,7 +74,7 @@ public class InitializeMainMenu : MonoBehaviour
     {
         // La escena del menú no trae ningún Input Module asignado a su EventSystem;
         // sin uno, ningún evento de puntero (PointerEnter, etc.) se dispara jamás.
-        EventSystem eventSystem = FindFirstObjectByType<EventSystem>();
+        EventSystem eventSystem = FindAnyObjectByType<EventSystem>();
 
         if (eventSystem != null && eventSystem.GetComponent<InputSystemUIInputModule>() == null)
         {

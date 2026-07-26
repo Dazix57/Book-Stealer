@@ -136,13 +136,13 @@ public class HideOut : MonoBehaviour
     IEnumerator TransitionRoutine(Vector3 startPos, Quaternion startRot, Vector3 endPos, Quaternion endRot, bool hidingIntoSpot)
     {
         Rigidbody rb = player.GetComponent<Rigidbody>();
-        Movement movement = player.GetComponent<Movement>();
+        PlayerHandler playerHandler = player.GetComponent<PlayerHandler>();
 
         // Durante la animación no se puede caminar ni rotar la cámara
-        if (movement != null)
+        if (playerHandler != null)
         {
-            movement.CanMove = false;
-            movement.CanRotate = false;
+            playerHandler.CanMove = false;
+            playerHandler.CanRotate = false;
         }
         if (rb != null) rb.isKinematic = true;
 
@@ -164,20 +164,20 @@ public class HideOut : MonoBehaviour
         player.transform.SetPositionAndRotation(endPos, endRot);
 
         // Evita que RotateRigidbody salte de vuelta al yaw previo en cuanto se reactive CanRotate
-        if (movement != null) movement.SetYawFromRotation(endRot);
+        if (playerHandler != null) playerHandler.SetYawFromRotation(endRot);
 
         if (hidingIntoSpot)
         {
             // Ya escondido: sigue sin poder caminar; la cámara depende de canRotateCameraX
-            if (movement != null) movement.CanRotate = canRotateCameraX;
+            if (playerHandler != null) playerHandler.CanRotate = canRotateCameraX;
         }
         else
         {
             if (rb != null) rb.isKinematic = false;
-            if (movement != null)
+            if (playerHandler != null)
             {
-                movement.CanMove = true;
-                movement.CanRotate = true;
+                playerHandler.CanMove = true;
+                playerHandler.CanRotate = true;
             }
             isHidden = false;
         }

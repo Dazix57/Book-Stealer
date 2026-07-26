@@ -10,6 +10,7 @@ public class Timer : MonoBehaviour
 	#region Fields
 	
 	// timer duration
+	[SerializeField]
 	float totalSeconds = 0;
 	
 	// timer execution
@@ -18,6 +19,8 @@ public class Timer : MonoBehaviour
 	
 	// support for Finished property
 	bool started = false;
+	[SerializeField]
+	bool unscaleTime = false;
 	
 	#endregion
 	
@@ -58,6 +61,16 @@ public class Timer : MonoBehaviour
 		get { return running; }
 	}
 
+	/// <summary>
+	/// Gets the seconds left before the timer finishes.
+	/// Returns 0 if the timer isn't currently running.
+	/// </summary>
+	/// <value>remaining seconds</value>
+	public float Remaining
+    {
+		get { return running ? Mathf.Max(0f, totalSeconds - elapsedSeconds) : 0f; }
+	}
+
     #endregion
 
     #region Methods
@@ -68,9 +81,19 @@ public class Timer : MonoBehaviour
     void Update()
     {	
 		// update timer and check for finished
-		if (running)
+		if (running && !unscaleTime)
         {
 			elapsedSeconds += Time.deltaTime;
+			if (elapsedSeconds >= totalSeconds)
+            {
+				running = false;
+			}
+		}
+
+		// update timer and check for finished (no scale)
+		else if (running && unscaleTime)
+        {
+			elapsedSeconds += Time.unscaledDeltaTime;
 			if (elapsedSeconds >= totalSeconds)
             {
 				running = false;

@@ -266,4 +266,9 @@ public class InitializeMenu : MonoBehaviour
         confirmationPanel.SetActive(enable);
         Time.timeScale = 0;
     }
+
+    public bool IsPausedMenuActive
+    {
+        get {return isPausedMenuActive;}
+    }
 }

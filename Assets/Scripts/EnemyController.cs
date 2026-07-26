@@ -91,7 +91,7 @@ public class EnemyController : MonoBehaviour
         float LocalViewDistance = viewDistance;
         float LocalAngle = fieldOfView;
 
-        Movement movement = player.GetComponent<Movement>();
+        PlayerHandler movement = player.GetComponent<PlayerHandler>();
         float sneakMultiplier = movement.SneakFOVMultiplier;
         LocalViewDistance *= sneakMultiplier;
         LocalAngle *= sneakMultiplier;
