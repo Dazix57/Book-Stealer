@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class InitializeMainMenu : MonoBehaviour
 {
@@ -15,21 +17,58 @@ public class InitializeMainMenu : MonoBehaviour
     (MainMenuOptionsEnum[]) Enum.GetValues(typeof(MainMenuOptionsEnum));
 
     private GameObject buttonsPanel;
+    private GameObject titlePanel;
+    private GameObject settingsPanel;
+    private GameObject creditsPanel;
+    private Slider uiVolumeSlider;
+    private Slider gameVolumeSlider;
     private int currentIndex = 0;
+    private Dictionary<MainMenuOptionsEnum, Color> defaultColors = new Dictionary<MainMenuOptionsEnum, Color>();
+    private bool settingsOpen = false;
+    private bool creditsOpen = false;
+
+    // Navegación por teclado dentro de Settings: fila 0 = volumen UI, 1 = volumen juego, 2 = Atrás.
+    private TextMeshProUGUI[] settingsTexts;
+    private Color[] settingsDefaultColors;
+    private int settingsIndex = 0;
+    private const float settingsVolumeStep = 0.1f;
 
     void Awake()
     {
         buttonsPanel = transform.Find("Buttons").gameObject;
+        titlePanel = transform.Find("Titulo").gameObject;
+        settingsPanel = transform.Find("SettingsPanel").gameObject;
+        creditsPanel = transform.Find("CreditsPanel").gameObject;
 
         EnsureInputModule();
         AddHoverEvents();
+        SetupSettingsPanel();
+        SetupCreditsPanel();
 
-        GetButtonText(menuOptions[currentIndex]).color = Color.yellow;
+        // Guarda el color con el que viene cada texto desde el prefab, para poder
+        // devolverlo tal cual al perder la selección en vez de forzar un color fijo.
+        foreach (MainMenuOptionsEnum option in menuOptions)
+        {
+            defaultColors[option] = GetButtonText(option).color;
+        }
+
+        GetButtonText(menuOptions[currentIndex]).color = Color.white;
     }
 
     void Update()
     {
-        Selection();
+        if (settingsOpen)
+        {
+            SettingsSelection();
+        }
+        else if (creditsOpen)
+        {
+            CreditsSelection();
+        }
+        else
+        {
+            Selection();
+        }
     }
 
     void Selection()
@@ -38,23 +77,25 @@ public class InitializeMainMenu : MonoBehaviour
 
         if (Keyboard.current.wKey.wasPressedThisFrame && currentIndex > 0)
         {
-            // Pone blanco culquier opción que no sea la primera (options[i] : i > 0)
-            currentButton.color = Color.white;
+            // Devuelve la opción actual a su color por defecto (options[i] : i > 0)
+            currentButton.color = defaultColors[menuOptions[currentIndex]];
             currentIndex--;
-            // Pone amarillo la opción anterior (options[i - 1])
-            GetButtonText(menuOptions[currentIndex]).color = Color.yellow;
+            // Resalta en blanco la opción anterior (options[i - 1])
+            GetButtonText(menuOptions[currentIndex]).color = Color.white;
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
         }
         else if (Keyboard.current.sKey.wasPressedThisFrame && currentIndex < menuOptions.Length - 1)
         {
-            // Pone blanco cualquier opción que no sea la última (options[i] : i < options.Length)
-            currentButton.color = Color.white;
+            // Devuelve la opción actual a su color por defecto (options[i] : i < options.Length)
+            currentButton.color = defaultColors[menuOptions[currentIndex]];
             currentIndex++;
-            // Pone amarillo la opción siguiente (options[i - 1])
-            GetButtonText(menuOptions[currentIndex]).color = Color.yellow;
+            // Resalta en blanco la opción siguiente (options[i - 1])
+            GetButtonText(menuOptions[currentIndex]).color = Color.white;
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
         }
         else if (currentIndex == 0)
         {
-            currentButton.color = Color.yellow;
+            currentButton.color = Color.white;
         }
 
         if (Keyboard.current.enterKey.wasPressedThisFrame)
@@ -109,9 +150,10 @@ public class InitializeMainMenu : MonoBehaviour
     {
         if (hoverIndex == currentIndex) return;
 
-        GetButtonText(menuOptions[currentIndex]).color = Color.white;
+        GetButtonText(menuOptions[currentIndex]).color = defaultColors[menuOptions[currentIndex]];
         currentIndex = hoverIndex;
-        GetButtonText(menuOptions[currentIndex]).color = Color.yellow;
+        GetButtonText(menuOptions[currentIndex]).color = Color.white;
+        AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
     }
 
     void OnClickOption(int index)
@@ -121,8 +163,145 @@ public class InitializeMainMenu : MonoBehaviour
         ReadInput(menuOptions[index]);
     }
 
+    void SetupSettingsPanel()
+    {
+        uiVolumeSlider = settingsPanel.transform.Find("UIVolumeSlider").GetComponent<Slider>();
+        gameVolumeSlider = settingsPanel.transform.Find("GameVolumeSlider").GetComponent<Slider>();
+
+        uiVolumeSlider.onValueChanged.AddListener(AudioManager.SetUIVolume);
+        gameVolumeSlider.onValueChanged.AddListener(AudioManager.SetGameVolume);
+
+        settingsPanel.transform.Find("BackButton").GetComponent<Button>().onClick.AddListener(OnBackConfirmed);
+
+        // Textos resaltables para la navegación por teclado: fila UI, fila Juego, Atrás.
+        settingsTexts = new TextMeshProUGUI[]
+        {
+            settingsPanel.transform.Find("UIVolumeLabel").GetComponent<TextMeshProUGUI>(),
+            settingsPanel.transform.Find("GameVolumeLabel").GetComponent<TextMeshProUGUI>(),
+            settingsPanel.transform.Find("BackButton").GetComponentInChildren<TextMeshProUGUI>()
+        };
+
+        settingsDefaultColors = new Color[settingsTexts.Length];
+        for (int i = 0; i < settingsTexts.Length; i++)
+        {
+            settingsDefaultColors[i] = settingsTexts[i].color;
+        }
+    }
+
+    void OpenSettings()
+    {
+        settingsOpen = true;
+        buttonsPanel.SetActive(false);
+        titlePanel.SetActive(false);
+        settingsPanel.SetActive(true);
+
+        // Refleja el volumen persistido cada vez que se abre, por si cambió desde otra escena.
+        uiVolumeSlider.value = AudioManager.UIVolume;
+        gameVolumeSlider.value = AudioManager.GameVolume;
+
+        settingsIndex = 0;
+        HighlightSettingsIndex();
+    }
+
+    void CloseSettings()
+    {
+        settingsOpen = false;
+        settingsPanel.SetActive(false);
+        buttonsPanel.SetActive(true);
+        titlePanel.SetActive(true);
+    }
+
+    void OnBackConfirmed()
+    {
+        // Comparte el mismo sonido de confirmación que Play/Settings/Credits/Exit.
+        AudioManager.Play(AudioClipName.ButtonConfirmationSound, AudioChannel.UI);
+        CloseSettings();
+    }
+
+    void HighlightSettingsIndex()
+    {
+        for (int i = 0; i < settingsTexts.Length; i++)
+        {
+            settingsTexts[i].color = i == settingsIndex ? Color.white : settingsDefaultColors[i];
+        }
+    }
+
+    void SettingsSelection()
+    {
+        if (Keyboard.current.wKey.wasPressedThisFrame && settingsIndex > 0)
+        {
+            settingsIndex--;
+            HighlightSettingsIndex();
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
+        }
+        else if (Keyboard.current.sKey.wasPressedThisFrame && settingsIndex < settingsTexts.Length - 1)
+        {
+            settingsIndex++;
+            HighlightSettingsIndex();
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
+        }
+
+        bool onVolumeRow = settingsIndex == 0 || settingsIndex == 1;
+
+        if (onVolumeRow)
+        {
+            Slider slider = settingsIndex == 0 ? uiVolumeSlider : gameVolumeSlider;
+
+            if (Keyboard.current.aKey.wasPressedThisFrame)
+            {
+                slider.value = Mathf.Clamp01(slider.value - settingsVolumeStep);
+            }
+            else if (Keyboard.current.dKey.wasPressedThisFrame)
+            {
+                slider.value = Mathf.Clamp01(slider.value + settingsVolumeStep);
+            }
+        }
+        else if (Keyboard.current.enterKey.wasPressedThisFrame)
+        {
+            OnBackConfirmed();
+        }
+    }
+
+    void SetupCreditsPanel()
+    {
+        creditsPanel.transform.Find("BackButton").GetComponent<Button>().onClick.AddListener(OnCreditsBackConfirmed);
+    }
+
+    void OpenCredits()
+    {
+        creditsOpen = true;
+        buttonsPanel.SetActive(false);
+        titlePanel.SetActive(false);
+        creditsPanel.SetActive(true);
+    }
+
+    void CloseCredits()
+    {
+        creditsOpen = false;
+        creditsPanel.SetActive(false);
+        buttonsPanel.SetActive(true);
+        titlePanel.SetActive(true);
+    }
+
+    void OnCreditsBackConfirmed()
+    {
+        AudioManager.Play(AudioClipName.ButtonConfirmationSound, AudioChannel.UI);
+        CloseCredits();
+    }
+
+    void CreditsSelection()
+    {
+        // Único elemento interactuable del panel: Enter confirma "Atrás" igual que un click.
+        if (Keyboard.current.enterKey.wasPressedThisFrame)
+        {
+            OnCreditsBackConfirmed();
+        }
+    }
+
     void ReadInput(MainMenuOptionsEnum currentSelection)
     {
+        AudioManager.Play(AudioClipName.ButtonConfirmationSound, AudioChannel.UI);
+
         switch (currentSelection)
         {
             case MainMenuOptionsEnum.Play:
@@ -130,11 +309,11 @@ public class InitializeMainMenu : MonoBehaviour
                 break;
 
             case MainMenuOptionsEnum.Settings:
-                Debug.Log("En proceso ...");
+                OpenSettings();
                 break;
 
             case MainMenuOptionsEnum.Credits:
-                Debug.Log("En proceso ...");
+                OpenCredits();
                 break;
 
             case MainMenuOptionsEnum.Exit:
