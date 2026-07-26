@@ -55,6 +55,17 @@ public class InitializeMainMenu : MonoBehaviour
         GetButtonText(menuOptions[currentIndex]).color = Color.white;
     }
 
+    void Start()
+    {
+        AudioManager.PlayMusic(AudioClipName.MenuTheme);
+    }
+
+    void OnDestroy()
+    {
+        // La escena del menú es la única dueña de su theme song; al salir (cargar otra escena), se corta.
+        AudioManager.StopMusic();
+    }
+
     void Update()
     {
         if (settingsOpen)

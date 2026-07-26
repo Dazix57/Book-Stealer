@@ -9,14 +9,19 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 
-public class InitializeMenu : MonoBehaviour
+public class InitializePauseMenu : MonoBehaviour
 {
-    private static InitializeMenu instance;
+    private static InitializePauseMenu instance;
 
     [SerializeField]
     private GameObject pauseMenuPreFab;
+
+    [SerializeField]
+    private string mainMenuSceneName;
 
     private MenuOptionsEnum[] pauseMenuOptions = 
     (MenuOptionsEnum[]) Enum.GetValues(typeof(MenuOptionsEnum));
@@ -28,11 +33,25 @@ public class InitializeMenu : MonoBehaviour
     private GameObject pauseMenu;
     private GameObject mainPanel;
     private GameObject confirmationPanel;
+    private GameObject settingsPanel;
+    private Volume pauseBlur;
 
     private bool isPausedMenuActive = false;
     private bool isConfirmationMenuActive = false;
+    private bool isSettingsMenuActive = false;
     private int currentIndex = 0;
     private int lastIndex = 0;
+
+    // Recuerda cuál de las dos opciones (LastCheckPoint o MainMenu) abrió el
+    // panel de confirmación, ya que ambas comparten el mismo Yes/No.
+    private MenuOptionsEnum pendingConfirmation;
+
+    // Navegación por teclado dentro de Settings: fila 0 = volumen UI, 1 = volumen juego, 2 = Back.
+    private UnityEngine.UI.Slider uiVolumeSlider;
+    private UnityEngine.UI.Slider gameVolumeSlider;
+    private TextMeshProUGUI[] settingsTexts;
+    private int settingsIndex = 0;
+    private const float settingsVolumeStep = 0.1f;
 
     void Awake()
     {
@@ -51,17 +70,24 @@ public class InitializeMenu : MonoBehaviour
 
         mainPanel = pauseMenu.transform.Find("PauseCanvas/PausePanel").gameObject;
         confirmationPanel = pauseMenu.transform.Find("PauseCanvas/ConfirmationPanel").gameObject;
+        settingsPanel = pauseMenu.transform.Find("PauseCanvas/SettingsPanel").gameObject;
+        pauseBlur = pauseMenu.transform.Find("PauseBlur").GetComponent<Volume>();
 
         EnsureInputModule();
         AddHoverEvents(mainPanel, pauseMenuOptions);
         AddHoverEvents(confirmationPanel, confirmationMenuOptions);
+        SetupSettingsPanel();
     }
 
     void Update()
     {
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (isPausedMenuActive && !isConfirmationMenuActive)
+            if (isSettingsMenuActive)
+            {
+                CloseSettingsMenu();
+            }
+            else if (isPausedMenuActive && !isConfirmationMenuActive)
             {
                 EnablePauseMenu(false);
                 ResetSelection(mainPanel, pauseMenuOptions);
@@ -72,7 +98,11 @@ public class InitializeMenu : MonoBehaviour
             }
         }
 
-        if (isConfirmationMenuActive)
+        if (isSettingsMenuActive)
+        {
+            SettingsSelection();
+        }
+        else if (isConfirmationMenuActive)
         {
             Selection(confirmationPanel, confirmationMenuOptions);
         }
@@ -88,11 +118,12 @@ public class InitializeMenu : MonoBehaviour
 
     if (Keyboard.current.wKey.wasPressedThisFrame && currentIndex > 0)
     {
-        // Pone blanco culquier opción que no sea la primera (options[i] : i > 0) 
+        // Pone blanco culquier opción que no sea la primera (options[i] : i > 0)
         currentButton.color = Color.white;
         currentIndex--;
         // Pone amarillo la opción anterior (options[i - 1])
         GetButtonText(panel, options[currentIndex]).color = Color.yellow;
+        AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
     }
     else if (Keyboard.current.sKey.wasPressedThisFrame && currentIndex < options.Length - 1)
     {
@@ -101,6 +132,7 @@ public class InitializeMenu : MonoBehaviour
         currentIndex++;
         // Pone amarillo la opción siguiente (options[i - 1])
         GetButtonText(panel, options[currentIndex]).color = Color.yellow;
+        AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
     }
     else if (currentIndex == 0)
         {
@@ -189,6 +221,7 @@ public class InitializeMenu : MonoBehaviour
         GetButtonText(panel, options[currentIndex]).color = Color.white;
         currentIndex = hoverIndex;
         GetButtonText(panel, options[currentIndex]).color = Color.yellow;
+        AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
     }
 
     void OnClickOption<T>(GameObject panel, T[] options, int index)
@@ -202,6 +235,8 @@ public class InitializeMenu : MonoBehaviour
 
     void ReadInput<T>(T currentSelection)
     {
+        AudioManager.Play(AudioClipName.ButtonConfirmationSound, AudioChannel.UI);
+
         switch(currentSelection)
         {
             case MenuOptionsEnum.Continue:
@@ -210,11 +245,12 @@ public class InitializeMenu : MonoBehaviour
             break;
 
             case MenuOptionsEnum.Options:
-            Debug.Log("En proceso ...");
+            OpenSettingsMenu();
             break;
 
             case MenuOptionsEnum.LastCheckPoint:
             case MenuOptionsEnum.MainMenu:
+            pendingConfirmation = (MenuOptionsEnum)(object)currentSelection;
             EnableConfirmationMenu(true);
             lastIndex = currentIndex;
             currentIndex = 0;
@@ -222,7 +258,17 @@ public class InitializeMenu : MonoBehaviour
             break;
 
             case ConfirmationOptionsEnum.Yes:
-            Debug.Log("En proceso ... (Yes)");
+            EnableConfirmationMenu(false);
+            ResetSelection(confirmationPanel, confirmationMenuOptions, lastIndex);
+
+            if (pendingConfirmation == MenuOptionsEnum.MainMenu)
+            {
+                GoToMainMenu();
+            }
+            else
+            {
+                Debug.Log("En proceso ... (Yes - LastCheckPoint)");
+            }
             break;
 
             case ConfirmationOptionsEnum.No:
@@ -242,6 +288,7 @@ public class InitializeMenu : MonoBehaviour
         {
             // Activa el menu de pausa
             mainPanel.SetActive(enable);
+            pauseBlur.enabled = true;
             Time.timeScale = 0;
 
             // Libera el cursor para poder usar el mouse en el menú
@@ -252,6 +299,7 @@ public class InitializeMenu : MonoBehaviour
         {
             // Desactiva el menu de pausa
             mainPanel.SetActive(enable);
+            pauseBlur.enabled = false;
             Time.timeScale = 1;
 
             // Vuelve a bloquear y ocultar el cursor para el control de cámara
@@ -265,6 +313,123 @@ public class InitializeMenu : MonoBehaviour
         // Activa la ventana de confirmación
         confirmationPanel.SetActive(enable);
         Time.timeScale = 0;
+    }
+
+    void GoToMainMenu()
+    {
+        // Restaura tiempo y cursor antes de salir; la escena del menú no se encarga de esto.
+        Time.timeScale = 1;
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+
+        // No tiene sentido mantener el PauseMenu (ni este singleton) vivo en el menú principal.
+        Destroy(pauseMenu);
+        Destroy(gameObject);
+
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    void SetupSettingsPanel()
+    {
+        uiVolumeSlider = settingsPanel.transform.Find("UIVolumeSlider").GetComponent<UnityEngine.UI.Slider>();
+        gameVolumeSlider = settingsPanel.transform.Find("GameVolumeSlider").GetComponent<UnityEngine.UI.Slider>();
+
+        uiVolumeSlider.onValueChanged.AddListener(AudioManager.SetUIVolume);
+        gameVolumeSlider.onValueChanged.AddListener(AudioManager.SetGameVolume);
+
+        UnityEngine.UI.Button backButton = settingsPanel.transform.Find("BackButton").GetComponent<UnityEngine.UI.Button>();
+        backButton.onClick.AddListener(OnSettingsBackConfirmed);
+
+        // Resalta la fila Back al pasar el mouse, igual que los botones del panel principal.
+        EventTrigger trigger = backButton.gameObject.AddComponent<EventTrigger>();
+        EventTrigger.Entry hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        hoverEntry.callback.AddListener((_) =>
+        {
+            settingsIndex = settingsTexts.Length - 1;
+            HighlightSettingsIndex();
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
+        });
+        trigger.triggers.Add(hoverEntry);
+
+        // Textos resaltables para la navegación por teclado: fila UI, fila Juego, Back.
+        settingsTexts = new TextMeshProUGUI[]
+        {
+            settingsPanel.transform.Find("UIVolumeLabel").GetComponent<TextMeshProUGUI>(),
+            settingsPanel.transform.Find("GameVolumeLabel").GetComponent<TextMeshProUGUI>(),
+            settingsPanel.transform.Find("BackButton/Back").GetComponent<TextMeshProUGUI>()
+        };
+    }
+
+    void OpenSettingsMenu()
+    {
+        isSettingsMenuActive = true;
+        mainPanel.SetActive(false);
+        settingsPanel.SetActive(true);
+
+        // Refleja el volumen persistido cada vez que se abre, por si cambió desde otra escena.
+        uiVolumeSlider.value = AudioManager.UIVolume;
+        gameVolumeSlider.value = AudioManager.GameVolume;
+
+        settingsIndex = 0;
+        HighlightSettingsIndex();
+    }
+
+    void CloseSettingsMenu()
+    {
+        isSettingsMenuActive = false;
+        settingsPanel.SetActive(false);
+        mainPanel.SetActive(true);
+    }
+
+    void OnSettingsBackConfirmed()
+    {
+        // Comparte el mismo sonido de confirmación que Continue/Options/LastCheckPoint/MainMenu/Yes/No.
+        AudioManager.Play(AudioClipName.ButtonConfirmationSound, AudioChannel.UI);
+        CloseSettingsMenu();
+    }
+
+    void HighlightSettingsIndex()
+    {
+        for (int i = 0; i < settingsTexts.Length; i++)
+        {
+            settingsTexts[i].color = i == settingsIndex ? Color.yellow : Color.white;
+        }
+    }
+
+    void SettingsSelection()
+    {
+        if (Keyboard.current.wKey.wasPressedThisFrame && settingsIndex > 0)
+        {
+            settingsIndex--;
+            HighlightSettingsIndex();
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
+        }
+        else if (Keyboard.current.sKey.wasPressedThisFrame && settingsIndex < settingsTexts.Length - 1)
+        {
+            settingsIndex++;
+            HighlightSettingsIndex();
+            AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
+        }
+
+        bool onVolumeRow = settingsIndex == 0 || settingsIndex == 1;
+
+        if (onVolumeRow)
+        {
+            UnityEngine.UI.Slider slider = settingsIndex == 0 ? uiVolumeSlider : gameVolumeSlider;
+
+            if (Keyboard.current.aKey.wasPressedThisFrame)
+            {
+                slider.value = Mathf.Clamp01(slider.value - settingsVolumeStep);
+            }
+            else if (Keyboard.current.dKey.wasPressedThisFrame)
+            {
+                slider.value = Mathf.Clamp01(slider.value + settingsVolumeStep);
+            }
+        }
+        else if (Keyboard.current.enterKey.wasPressedThisFrame)
+        {
+            OnSettingsBackConfirmed();
+        }
     }
 
     public bool IsPausedMenuActive

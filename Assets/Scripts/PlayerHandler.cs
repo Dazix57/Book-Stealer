@@ -35,10 +35,10 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField]
     private float PushForce;
 
-    [SerializeField] private Key CrouchKey;
-    [SerializeField] private Key ParryKey;
-    [SerializeField] private Key PickUpKey;
-    [SerializeField] private Key ObjectiveMark;
+    [SerializeField] private Key crouchKey;
+    [SerializeField] private Key parryKey;
+    [SerializeField] private Key pickUpKey;
+    [SerializeField] private Key objectiveMark;
 
     // Parry setup
     private float ParryDebounce = 0.0f;
@@ -93,8 +93,8 @@ public class PlayerHandler : MonoBehaviour
         Cursor.visible = false;
 
         // Set up keybinds
-        ParryKey = Key.F;
-        CrouchKey = Key.LeftCtrl;
+        parryKey = Key.F;
+        crouchKey = Key.LeftCtrl;
 
         // Health setup
         currentHealth = maxHealth;
@@ -119,7 +119,7 @@ public class PlayerHandler : MonoBehaviour
     private void Update()
     {
         // Deshabilita el player input si se esta en el menu de pausa
-        if (!GetComponent<InitializeMenu>().IsPausedMenuActive)
+        if (!GetComponent<InitializePauseMenu>().IsPausedMenuActive)
         {
             ReadInput();
         }
@@ -198,7 +198,7 @@ public class PlayerHandler : MonoBehaviour
         }
 
         // -- Detect parry input
-        if (Keyboard.current[ParryKey].isPressed)
+        if (Keyboard.current[parryKey].isPressed)
         {
             IsParrying = true;
             //Debug.Log("parrying");
@@ -208,7 +208,7 @@ public class PlayerHandler : MonoBehaviour
         }
 
         // -- Detect crouch input
-        if (Keyboard.current[CrouchKey].isPressed)
+        if (Keyboard.current[crouchKey].isPressed)
         {
             IsCrouching = true;
             
@@ -218,7 +218,7 @@ public class PlayerHandler : MonoBehaviour
         }
 
         // Revisa que el jugador pueda visualizar el marcador
-        if (Keyboard.current[ObjectiveMark].wasPressedThisFrame && !markerCooldown.Running)
+        if (Keyboard.current[objectiveMark].wasPressedThisFrame && !markerCooldown.Running)
         {
             CalculateObjectiveDistance();
         }
@@ -364,5 +364,10 @@ public class PlayerHandler : MonoBehaviour
     {
         get {return canRotate;}
         set {canRotate = value;}
+    }
+
+    public Key PickUpKey
+    {
+        get {return pickUpKey;}
     }
 }

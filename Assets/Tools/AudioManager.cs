@@ -9,6 +9,7 @@ public static class AudioManager
     #region Fields
     static bool initialized = false;
     static AudioSource audioSource;
+    static AudioSource musicSource;
     static Dictionary<AudioClipName, AudioClip> audioClips = new Dictionary<AudioClipName, AudioClip>();
 
     const string UIVolumePrefKey = "UIVolume";
@@ -45,26 +46,30 @@ public static class AudioManager
 
     #region Methods
     /// <summary>
-    /// Initializes the AudioManager with a given AudioSource. This method should be called once at the start of the game to set up audio playback.
+    /// Initializes the AudioManager with the given AudioSources. This method should be called once at the start of the game to set up audio playback.
     /// </summary>
-    /// <param name="source"> The AudioSource component attached to the AudioManager GameObject. </param>
-    public static void Initialize(AudioSource source)
+    /// <param name="source"> The AudioSource used for one-shot SFX (button clicks, etc). </param>
+    /// <param name="loopSource"> The AudioSource used for looping background music/theme songs. </param>
+    public static void Initialize(AudioSource source, AudioSource loopSource)
     {
         /** Load all audio clips into the dictionary for easy access.
             Structure of the dictionary: Key = AudioClipName enum, Value = AudioClip loaded from folder 'Resources'.
-            
+
             e.g:
             audioClips.Add(AudioClipName.[enumName], Resources.Load<AudioClip>(AudioClipName.[enumName].ToString()));
-            
+
             [enumName] should be replaced with the actual name of the enum value corresponding to the audio clip you want to load.
         **/
 
         initialized = true;
         audioSource = source;
+        musicSource = loopSource;
+        musicSource.loop = true;
 
         // Load all audio clips under this line.
         audioClips.Add(AudioClipName.ButtonSelectionSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonSelectionSound.ToString()));
         audioClips.Add(AudioClipName.ButtonConfirmationSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonConfirmationSound.ToString()));
+        audioClips.Add(AudioClipName.MenuTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.MenuTheme.ToString()));
 
 
         uiVolume = PlayerPrefs.GetFloat(UIVolumePrefKey, 1f);
@@ -84,12 +89,39 @@ public static class AudioManager
     }
 
     /// <summary>
+    /// Plays an audio clip on loop through the dedicated music channel (scaled by UI volume), stopping
+    /// whatever was previously playing on it. Used for menu theme songs / background music.
+    /// </summary>
+    public static void PlayMusic(AudioClipName name)
+    {
+        musicSource.clip = audioClips[name];
+        musicSource.volume = uiVolume;
+        musicSource.Play();
+    }
+
+    /// <summary>
+    /// Stops whatever is currently playing on the music channel.
+    /// </summary>
+    public static void StopMusic()
+    {
+        if (musicSource != null)
+        {
+            musicSource.Stop();
+        }
+    }
+
+    /// <summary>
     /// Sets and persists the UI channel volume (0-1), used by clips played with AudioChannel.UI.
     /// </summary>
     public static void SetUIVolume(float volume)
     {
         uiVolume = Mathf.Clamp01(volume);
         PlayerPrefs.SetFloat(UIVolumePrefKey, uiVolume);
+
+        if (musicSource != null)
+        {
+            musicSource.volume = uiVolume;
+        }
     }
 
     /// <summary>
