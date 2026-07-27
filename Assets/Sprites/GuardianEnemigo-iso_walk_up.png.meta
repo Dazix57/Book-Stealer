@@ -1,0 +1,694 @@
+fileFormatVersion: 2
+guid: beb828a2aa1c04563acd4e1ed51d6f1c
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_0
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 1056
+        width: 138
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c20edd5b0d1d04a18a6423789e1527f6
+      internalID: -228168787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_1
+      rect:
+        serializedVersion: 2
+        x: 315
+        y: 1056
+        width: 138
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d08325b41601d45059af666d15a02154
+      internalID: 1583063496
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_2
+      rect:
+        serializedVersion: 2
+        x: 570
+        y: 1056
+        width: 139
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 93b41e9af658b48d0be4bddf648db98e
+      internalID: -1981714228
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_3
+      rect:
+        serializedVersion: 2
+        x: 825
+        y: 1056
+        width: 141
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 293677d7ea5c848f2af82662d4e0e6d6
+      internalID: -1258842349
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_4
+      rect:
+        serializedVersion: 2
+        x: 1080
+        y: 1056
+        width: 142
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 23770eb9274304717b9820dd14b2096f
+      internalID: -368242014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_5
+      rect:
+        serializedVersion: 2
+        x: 57
+        y: 800
+        width: 141
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 34cf386b4979b4a56b6d0459570bff6a
+      internalID: 635198616
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_6
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 799
+        width: 143
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5514d5afb7bd74d1684add4460448069
+      internalID: -1329232430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_7
+      rect:
+        serializedVersion: 2
+        x: 567
+        y: 800
+        width: 144
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a7bd484cd3f2c459ba48d9cb67d78d56
+      internalID: 498283710
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_8
+      rect:
+        serializedVersion: 2
+        x: 824
+        y: 800
+        width: 142
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5cd859492ed7f4752ac9791f298f94d1
+      internalID: 890001907
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_9
+      rect:
+        serializedVersion: 2
+        x: 1080
+        y: 800
+        width: 142
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 17bbd939cda7649acaa83400353f017b
+      internalID: -648481378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_10
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 544
+        width: 143
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 57bc00ce0596749e7bd0cc3e4e541a9c
+      internalID: 1849634358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_11
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 544
+        width: 143
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 25326e9f2a1fc41e9ad62cea1cc0f070
+      internalID: -1592453108
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_12
+      rect:
+        serializedVersion: 2
+        x: 569
+        y: 544
+        width: 144
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15c2035eb0c3d41c7bc1c8029674e82b
+      internalID: 1558460412
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_13
+      rect:
+        serializedVersion: 2
+        x: 826
+        y: 544
+        width: 144
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b7318887a01944d77bc6b4866753ce27
+      internalID: 1443249208
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_14
+      rect:
+        serializedVersion: 2
+        x: 1083
+        y: 544
+        width: 144
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e61bf1784b6884dc780dff056239c22f
+      internalID: 1204865215
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_15
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 287
+        width: 144
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b13930f4ea5d544419199901c62bfc07
+      internalID: -1292651056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_16
+      rect:
+        serializedVersion: 2
+        x: 316
+        y: 288
+        width: 143
+        height: 174
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 775c43f3c212e4051a13a211edbbd4e5
+      internalID: -29875892
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_17
+      rect:
+        serializedVersion: 2
+        x: 573
+        y: 287
+        width: 142
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dc8130072b4c44d69baecfaa39e57e1d
+      internalID: 883376125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_18
+      rect:
+        serializedVersion: 2
+        x: 829
+        y: 287
+        width: 142
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 101d98f1626dc4a2b95b229c14869cdf
+      internalID: -343497883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_19
+      rect:
+        serializedVersion: 2
+        x: 1085
+        y: 288
+        width: 141
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d8cbd516d1d714f708be59ba446395ba
+      internalID: 1351467280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_20
+      rect:
+        serializedVersion: 2
+        x: 61
+        y: 31
+        width: 140
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8051dd238afcd441b90e04e6832b74cc
+      internalID: -221407705
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_21
+      rect:
+        serializedVersion: 2
+        x: 316
+        y: 31
+        width: 140
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3e4ff3dad40bd442782c09a3c12e9574
+      internalID: 625806621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_22
+      rect:
+        serializedVersion: 2
+        x: 571
+        y: 32
+        width: 140
+        height: 175
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 072f29d47746a463c95817e8de2fc07d
+      internalID: 1889669686
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_23
+      rect:
+        serializedVersion: 2
+        x: 827
+        y: 32
+        width: 138
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 764eb25cbe6ec42369b0ffb7dc6754ad
+      internalID: 641379075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GuardianEnemigo-iso_walk_up_24
+      rect:
+        serializedVersion: 2
+        x: 1083
+        y: 32
+        width: 138
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fa3badd060aa04f7eb554917ca864120
+      internalID: -1531424321
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: ec94fdefc7b2a494fa7d975af04e90dc
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      GuardianEnemigo-iso_walk_up_0: -228168787
+      GuardianEnemigo-iso_walk_up_1: 1583063496
+      GuardianEnemigo-iso_walk_up_10: 1849634358
+      GuardianEnemigo-iso_walk_up_11: -1592453108
+      GuardianEnemigo-iso_walk_up_12: 1558460412
+      GuardianEnemigo-iso_walk_up_13: 1443249208
+      GuardianEnemigo-iso_walk_up_14: 1204865215
+      GuardianEnemigo-iso_walk_up_15: -1292651056
+      GuardianEnemigo-iso_walk_up_16: -29875892
+      GuardianEnemigo-iso_walk_up_17: 883376125
+      GuardianEnemigo-iso_walk_up_18: -343497883
+      GuardianEnemigo-iso_walk_up_19: 1351467280
+      GuardianEnemigo-iso_walk_up_2: -1981714228
+      GuardianEnemigo-iso_walk_up_20: -221407705
+      GuardianEnemigo-iso_walk_up_21: 625806621
+      GuardianEnemigo-iso_walk_up_22: 1889669686
+      GuardianEnemigo-iso_walk_up_23: 641379075
+      GuardianEnemigo-iso_walk_up_24: -1531424321
+      GuardianEnemigo-iso_walk_up_3: -1258842349
+      GuardianEnemigo-iso_walk_up_4: -368242014
+      GuardianEnemigo-iso_walk_up_5: 635198616
+      GuardianEnemigo-iso_walk_up_6: -1329232430
+      GuardianEnemigo-iso_walk_up_7: 498283710
+      GuardianEnemigo-iso_walk_up_8: 890001907
+      GuardianEnemigo-iso_walk_up_9: -648481378
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
