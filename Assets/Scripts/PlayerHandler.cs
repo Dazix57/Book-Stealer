@@ -17,9 +17,15 @@ public class PlayerHandler : MonoBehaviour
 
     private Rigidbody rb;
     private BoxCollider collider;
+    private Transform cameraTransform;
     private Vector3 inputDirection;
     private float mouseX;
-    private float yaw; // Rotación acumulada en el eje Y (horizontal)
+    private float mouseY;
+    private float yaw; // Rotación acumulada en el eje Y (horizontal), aplicada al Rigidbody
+    private float pitch; // Rotación acumulada en el eje X (vertical), aplicada solo a la cámara
+
+    [SerializeField]
+    private float maxLookDownAngle = 40f; // Límite de inclinación hacia abajo; no se permite mirar por encima del forward
 
     [SerializeField]
     private bool IsParrying;
@@ -83,6 +89,9 @@ public class PlayerHandler : MonoBehaviour
         collider = GetComponent<BoxCollider>();
         rb.linearDamping = 10f;
         PushForce = 40f;
+
+        // La cámara es hija del Player; el pitch se aplica solo a ella, no al Rigidbody
+        cameraTransform = Camera.main.transform;
 
         yaw = transform.eulerAngles.y;
         IsParrying = false;
@@ -226,8 +235,9 @@ public class PlayerHandler : MonoBehaviour
 
         inputDirection = inputDirection.normalized;
 
-        // Lee el movimiento horizontal del mouse
+        // Lee el movimiento del mouse
         mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity;
+        mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity;
     }
 
     private void TakeDamage(float amount)
@@ -261,6 +271,10 @@ public class PlayerHandler : MonoBehaviour
         yaw += mouseX;
         Quaternion targetRotation = Quaternion.Euler(0f, yaw, 0f);
         rb.MoveRotation(targetRotation);
+
+        // Pitch de la cámara: solo hacia abajo, nunca por encima del forward (0).
+        pitch = Mathf.Clamp(pitch - mouseY, 0f, maxLookDownAngle);
+        cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     // Sincroniza el yaw acumulado con una rotación aplicada externamente
@@ -290,9 +304,15 @@ public class PlayerHandler : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("ObjectiveArea"))
+        if (other.gameObject.CompareTag("ObjectiveArea") // Revisa que el área aun es de objetivo
+        && other.gameObject.transform.childCount != 0 && // Revisa que el marcador aun exista
+        other.gameObject.transform.GetChild(0).tag == "Mark") // Revisa que tiene el tag 'Mark'
         {
             inObjectiveArea = true;
+        }
+        else
+        {
+            inObjectiveArea = false;
         }
     }
 
@@ -309,18 +329,18 @@ public class PlayerHandler : MonoBehaviour
         // Revisa si NO esta en el area del objetivo
         if (!inObjectiveArea)
         {
-            List<GameObject> objectives = new(GameObject.FindGameObjectsWithTag("ObjectiveArea"));
+            List<GameObject> objectives = new(GameObject.FindGameObjectsWithTag("Mark"));
             Vector3 currentPosition = transform.position;
             float closestDistance = Mathf.Infinity;
 
-            foreach (var area in objectives)
+            foreach (GameObject mark in objectives)
             {
-                Vector3 areaPosition = area.transform.position;
+                Vector3 areaPosition = mark.transform.position;
                 float distance = Vector3.Distance(currentPosition, areaPosition);
 
                 if (distance <= closestDistance)
                 {
-                    closestObjective = area;
+                    closestObjective = mark;
                     closestDistance = distance;
                 }
             }
@@ -333,13 +353,13 @@ public class PlayerHandler : MonoBehaviour
     {
         if (closestObjective != null)
         {
-            SpriteRenderer marker = closestObjective.GetComponentInChildren<SpriteRenderer>();
+            SpriteRenderer mark = closestObjective.GetComponentInChildren<SpriteRenderer>();
 
-            marker.enabled = false;
+            mark.enabled = false;
 
             if(!markerTimer.Finished)
             {
-                marker.enabled = true;
+                mark.enabled = true;
             }
             else
             {

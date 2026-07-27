@@ -16,6 +16,7 @@ public static class AudioManager
     const string GameVolumePrefKey = "GameVolume";
     static float uiVolume = 1f;
     static float gameVolume = 1f;
+    static AudioChannel musicChannel = AudioChannel.UI;
     #endregion
 
     #region Properties
@@ -66,10 +67,17 @@ public static class AudioManager
         musicSource = loopSource;
         musicSource.loop = true;
 
+        // Los SFX de UI (incluido el propio menú de pausa) deben seguir escuchándose
+        // aunque AudioListener.pause silencie el resto del audio al pausar.
+        audioSource.ignoreListenerPause = true;
+
         // Load all audio clips under this line.
         audioClips.Add(AudioClipName.ButtonSelectionSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonSelectionSound.ToString()));
         audioClips.Add(AudioClipName.ButtonConfirmationSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonConfirmationSound.ToString()));
+        audioClips.Add(AudioClipName.PickUpSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.PickUpSound.ToString()));
+
         audioClips.Add(AudioClipName.MenuTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.MenuTheme.ToString()));
+        audioClips.Add(AudioClipName.GameplayTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.GameplayTheme.ToString()));
 
 
         uiVolume = PlayerPrefs.GetFloat(UIVolumePrefKey, 1f);
@@ -89,13 +97,16 @@ public static class AudioManager
     }
 
     /// <summary>
-    /// Plays an audio clip on loop through the dedicated music channel (scaled by UI volume), stopping
-    /// whatever was previously playing on it. Used for menu theme songs / background music.
+    /// Plays an audio clip on loop through the dedicated music channel, scaled by the given channel's volume,
+    /// stopping whatever was previously playing on it. Used for menu/gameplay theme songs.
     /// </summary>
-    public static void PlayMusic(AudioClipName name)
+    /// <param name="name"> The name of the audio file stored in the Resources folder. </param>
+    /// <param name="channel"> Which volume slider (UI or Game) scales this track, and keeps scaling it live while it plays. </param>
+    public static void PlayMusic(AudioClipName name, AudioChannel channel = AudioChannel.UI)
     {
+        musicChannel = channel;
         musicSource.clip = audioClips[name];
-        musicSource.volume = uiVolume;
+        musicSource.volume = channel == AudioChannel.UI ? uiVolume : gameVolume;
         musicSource.Play();
     }
 
@@ -118,7 +129,7 @@ public static class AudioManager
         uiVolume = Mathf.Clamp01(volume);
         PlayerPrefs.SetFloat(UIVolumePrefKey, uiVolume);
 
-        if (musicSource != null)
+        if (musicSource != null && musicChannel == AudioChannel.UI)
         {
             musicSource.volume = uiVolume;
         }
@@ -131,6 +142,11 @@ public static class AudioManager
     {
         gameVolume = Mathf.Clamp01(volume);
         PlayerPrefs.SetFloat(GameVolumePrefKey, gameVolume);
+
+        if (musicSource != null && musicChannel == AudioChannel.Game)
+        {
+            musicSource.volume = gameVolume;
+        }
     }
     #endregion
 }

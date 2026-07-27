@@ -9,6 +9,7 @@ TagManager:
   - HideOut
   - ObjectiveArea
   - PauseMenu
+  - Mark
   layers:
   - Default
   - TransparentFX

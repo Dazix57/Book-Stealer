@@ -4,7 +4,7 @@ public class RotateFacingSprite : MonoBehaviour
 {
     private SpriteRenderer sprite;
 
-    void Awake()
+    void Start()
     {
         sprite = GetComponent<SpriteRenderer>();
     }
@@ -21,6 +21,11 @@ public class RotateFacingSprite : MonoBehaviour
     void RotateTowardsCamera()
     {
         Camera mainCamera = Camera.main;
+
+        // Durante una transicion de escena (ej. volver al menu), este objeto puede
+        // seguir recibiendo Update() por un frame mas mientras Camera.main ya no
+        // resuelve ninguna camara (la vieja se destruyo, la nueva aun no se activo).
+        if (mainCamera == null) return;
 
         sprite.transform.LookAt(mainCamera.transform.position);
     }

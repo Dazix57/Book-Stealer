@@ -1,21 +1,27 @@
 using TMPro;
-using Unity.VisualScripting.Dependencies.NCalc;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class ItemHandler : MonoBehaviour
 {
     [SerializeField]
-    private GameObject promptPanel;
+    private GameObject itemPanelPreFab;
+    private GameObject itemPanel;
     private GameObject player = null;
-    private bool picked = false;
     private bool inRange = false;
 
+    void Awake()
+    {
+        // 'promptPanel' es el prefab, no una instancia de escena: hay que instanciarlo
+        // antes de poder activarlo/mostrarlo (SetActive falla sobre el asset directo).
+        itemPanel = Instantiate(itemPanelPreFab);
+        itemPanel.SetActive(inRange);
+    }
 
     // Update is called once per frame
     void Update()
     {
-        
+        CheckItemPicked();
     }
 
     void OnTriggerEnter(Collider other)
@@ -25,8 +31,8 @@ public class ItemHandler : MonoBehaviour
             inRange = true;
             player = other.gameObject;
 
-            promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = "Press E to pick";
-            promptPanel.SetActive(inRange);
+            itemPanel.GetComponentInChildren<TextMeshProUGUI>().text = "Press E to pick up";
+            itemPanel.SetActive(inRange);
         }
     }
 
@@ -35,7 +41,7 @@ public class ItemHandler : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             inRange = false;
-            promptPanel.SetActive(inRange);
+            itemPanel.SetActive(inRange);
         }
     }
 
@@ -43,14 +49,9 @@ public class ItemHandler : MonoBehaviour
     {
         if (player != null && inRange && Keyboard.current[player.GetComponent<PlayerHandler>().PickUpKey].wasPressedThisFrame)
         {
-            picked = true;
-            
+            AudioManager.Play(AudioClipName.PickUpSound, AudioChannel.Game);
+            Destroy(itemPanel);
+            Destroy(gameObject);
         }
     }
-
-    public bool Picked
-    {
-        get {return picked;}
-        set {picked = value;}
-    } 
 }

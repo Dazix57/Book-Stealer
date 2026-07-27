@@ -291,6 +291,10 @@ public class InitializePauseMenu : MonoBehaviour
             pauseBlur.enabled = true;
             Time.timeScale = 0;
 
+            // Pausa todo el audio en reproducción (música, ambientes 3D como el de ObjectiveItem, etc.)
+            // salvo los SFX de UI, que se marcan ignoreListenerPause en AudioManager para seguir sonando.
+            AudioListener.pause = true;
+
             // Libera el cursor para poder usar el mouse en el menú
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
@@ -301,6 +305,7 @@ public class InitializePauseMenu : MonoBehaviour
             mainPanel.SetActive(enable);
             pauseBlur.enabled = false;
             Time.timeScale = 1;
+            AudioListener.pause = false;
 
             // Vuelve a bloquear y ocultar el cursor para el control de cámara
             UnityEngine.Cursor.lockState = CursorLockMode.Locked;
@@ -317,8 +322,9 @@ public class InitializePauseMenu : MonoBehaviour
 
     void GoToMainMenu()
     {
-        // Restaura tiempo y cursor antes de salir; la escena del menú no se encarga de esto.
+        // Restaura tiempo, audio y cursor antes de salir; la escena del menú no se encarga de esto.
         Time.timeScale = 1;
+        AudioListener.pause = false;
         UnityEngine.Cursor.lockState = CursorLockMode.None;
         UnityEngine.Cursor.visible = true;
 

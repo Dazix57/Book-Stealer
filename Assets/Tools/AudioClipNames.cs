@@ -8,5 +8,7 @@ public enum AudioClipName
     // Add your audio clip names here
     ButtonSelectionSound,
     ButtonConfirmationSound,
-    MenuTheme
+    MenuTheme,
+    GameplayTheme,
+    PickUpSound
 }
