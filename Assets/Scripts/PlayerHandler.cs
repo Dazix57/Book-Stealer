@@ -62,6 +62,11 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private float sneakRegenRate = 0.05f;
     private float sneakMeter;
 
+    // Referencia al collider que puso inObjectiveArea en true, para poder resetearlo
+    // al salir aunque su hijo 'Mark' ya no exista (ej. si el área se completó
+    // mientras el jugador seguía adentro).
+    private GameObject currentObjectiveAreaTrigger = null;
+
     private GameObject closestObjective = null;
     private Timer markerTimer = null;
     private Timer markerCooldown = null;
@@ -69,6 +74,11 @@ public class PlayerHandler : MonoBehaviour
 
     [SerializeField] private GameObject coolDownMessagePreFab;
     private GameObject coolDownMessage;
+
+    // Evita que Update() use referencias (coolDownMessage, markerCooldown, etc.)
+    // antes de que Awake() termine de inicializarlas, o luego de que una recarga
+    // de escena (ej. cargar checkpoint) las haya destruido.
+    private bool isInitialized = false;
 
     // Only applies the sneak bonus while actively crouching; otherwise enemies see at full FOV.
     public float SneakFOVMultiplier => IsCrouching ? sneakMeter : 1f;
@@ -123,10 +133,15 @@ public class PlayerHandler : MonoBehaviour
         // Instancia del prefab 'coolDownMessagePreFab'
         coolDownMessage = Instantiate<GameObject>(coolDownMessagePreFab, Camera.main.transform.position, Quaternion.identity);
 
+        isInitialized = true;
     }
 
     private void Update()
     {
+        // No corre la lógica de Update hasta que Awake() haya terminado de
+        // inicializar todas las referencias (ej. coolDownMessage, markerCooldown).
+        if (!isInitialized) return;
+
         // Deshabilita el player input si se esta en el menu de pausa
         if (!GetComponent<InitializePauseMenu>().IsPausedMenuActive)
         {
@@ -304,23 +319,23 @@ public class PlayerHandler : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("ObjectiveArea") // Revisa que el área aun es de objetivo
-        && other.gameObject.transform.childCount != 0 && // Revisa que el marcador aun exista
-        other.gameObject.transform.GetChild(0).tag == "Mark") // Revisa que tiene el tag 'Mark'
+        if (other.gameObject.transform.childCount == 1 && // Revisa que tenga un solo hijo
+            other.gameObject.transform.GetChild(0).tag == "Mark") // Revisa que el tag del primer hijo sea 'Mark'
         {
             inObjectiveArea = true;
-        }
-        else
-        {
-            inObjectiveArea = false;
+            currentObjectiveAreaTrigger = other.gameObject;
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.gameObject.CompareTag("ObjectiveArea"))
+        // Compara por el GameObject que activó inObjectiveArea, no por su hijo 'Mark':
+        // ese hijo puede haber sido destruido (área completada) mientras el jugador
+        // seguía adentro, y aun así hay que resetear la bandera al salir.
+        if (other.gameObject == currentObjectiveAreaTrigger)
         {
             inObjectiveArea = false;
+            currentObjectiveAreaTrigger = null;
         }
     }
 
@@ -368,6 +383,10 @@ public class PlayerHandler : MonoBehaviour
         }
         else
         {
+            // coolDownMessage puede haber sido destruido junto con la escena anterior
+            // (ej. al cargar un checkpoint) mientras este frame ya estaba en curso.
+            if (coolDownMessage == null) return;
+
             coolDownMessage.transform.GetChild(0).gameObject.SetActive(markerCooldown.Running);
             TextMeshProUGUI panel = coolDownMessage.transform.GetChild(0).GetComponentInChildren<TextMeshProUGUI>();
             panel.text = $"Mark available in {Mathf.CeilToInt(markerCooldown.Remaining)} s";

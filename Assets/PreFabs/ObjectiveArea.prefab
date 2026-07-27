@@ -115,10 +115,10 @@ GameObject:
   m_Component:
   - component: {fileID: 278983852599862275}
   - component: {fileID: 3877823997274410417}
-  - component: {fileID: 6810127101597717690}
+  - component: {fileID: 8271356208280180661}
   m_Layer: 0
   m_Name: ObjectiveArea
-  m_TagString: ObjectiveArea
+  m_TagString: a1
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -158,9 +158,9 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 20, y: 8, z: 20}
+  m_Size: {x: 30, y: 8, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &6810127101597717690
+--- !u!114 &8271356208280180661
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -172,5 +172,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f881e9d51922b4fbf39f50add2920d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CheckObjectives
-  objectives: []
+  objectives:
+  - {fileID: 0}
   objectivesPanelPrefab: {fileID: 940000001, guid: 19d17a9626c145fbb7a0b0d6ce172a84, type: 3}

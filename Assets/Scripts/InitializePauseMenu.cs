@@ -267,7 +267,7 @@ public class InitializePauseMenu : MonoBehaviour
             }
             else
             {
-                Debug.Log("En proceso ... (Yes - LastCheckPoint)");
+                LoadLastCheckpoint();
             }
             break;
 
@@ -333,6 +333,14 @@ public class InitializePauseMenu : MonoBehaviour
         Destroy(gameObject);
 
         SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    void LoadLastCheckpoint()
+    {
+        // Cierra el menu de pausa y libera el control del jugador antes de recargar la escena
+        EnablePauseMenu(false);
+
+        GameManager.LoadCheckpoint();
     }
 
     void SetupSettingsPanel()

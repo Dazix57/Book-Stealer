@@ -12,6 +12,7 @@ public class CheckObjectives : MonoBehaviour
 
     private bool showObjectives = false;
     private bool areaCompleted = false;
+    private bool checkPoint = false;
     private int itemsPicked = 0;
 
     private GameObject objectivesPanel;
@@ -22,15 +23,21 @@ public class CheckObjectives : MonoBehaviour
         // Si el área ya se completó en una sesión anterior, no hace falta volver a revisar los objetos.
         areaCompleted = GameManager.IsObjectiveAreaCompleted(gameObject.tag);
 
-        GameObject objectivesPanelInstance = Instantiate(objectivesPanelPrefab);
-        objectivesPanel = objectivesPanelInstance.transform.Find("Panel").gameObject;
-        objectivesText = objectivesPanel.GetComponentInChildren<TextMeshProUGUI>(true);
+        // Awake() corre una única vez por instancia de ObjectiveArea, así que cada
+        // área crea exactamente un panel propio (con sus propios objetivos y texto),
+        // sin compartirlo con otras áreas.
+        if (objectivesPanel == null)
+        {
+            GameObject objectivesPanelInstance = Instantiate(objectivesPanelPrefab);
+            objectivesPanel = objectivesPanelInstance.transform.Find("Panel").gameObject;
+            objectivesText = objectivesPanel.GetComponentInChildren<TextMeshProUGUI>(true);
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (showObjectives)
+        if (showObjectives || checkPoint)
         {
             EnableObjectivePanel();
         }
@@ -64,16 +71,12 @@ public class CheckObjectives : MonoBehaviour
             objectivesText.text = $"Objectives Completed! {objectives.Length} / {objectives.Length}";
         }
 
-        if (itemsPicked == objectives.Length)
+        else if (itemsPicked == objectives.Length)
         {
             areaCompleted = true;
             GameManager.MarkObjectiveAreaCompleted(gameObject.tag);
+            RemoveMark();
 
-            if (gameObject.transform.childCount != 0)
-            {
-                gameObject.transform.GetChild(0).tag = "Untagged";
-                Destroy(gameObject.transform.GetChild(0).gameObject);
-            }
             objectivesText.text = $"Objectives Completed! {itemsPicked} / {objectives.Length}";
         }
         else
@@ -92,6 +95,29 @@ public class CheckObjectives : MonoBehaviour
             {
                 itemsPicked += 1;
             }
+        }
+    }
+
+    public void SetObjectivesCompleted()
+    {
+        itemsPicked = objectives.Length;
+        checkPoint = true;
+        foreach(GameObject item in objectives)
+        {
+            Destroy(item);
+        }
+        RemoveMark();
+    }
+
+    // Quita el marcador (hijo 'Mark') del área: se usa tanto al completarla en vivo
+    // como al recargar un checkpoint donde el área ya estaba completada, para que
+    // ambos casos dejen el área en el mismo estado (sin marcador).
+    void RemoveMark()
+    {
+        if (gameObject.transform.childCount > 0)
+        {
+            gameObject.transform.GetChild(0).tag = "Untagged";
+            Destroy(gameObject.transform.GetChild(0).gameObject);
         }
     }
 }
