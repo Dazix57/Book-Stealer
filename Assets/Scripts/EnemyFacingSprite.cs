@@ -2,31 +2,31 @@ using UnityEngine;
 
 public class EnemyFacingSprite : MonoBehaviour
 {
-    [SerializeField] private Sprite frontSprite;
-    [SerializeField] private Sprite backSprite;
+    [SerializeField] private GameObject forwardSprite;
+    [SerializeField] private GameObject backwardSprite;
 
-    private SpriteRenderer spriteRenderer;
     private Transform cameraTransform;
-
-    void Awake()
-    {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-    }
+    private bool showingForward;
 
     void Start()
     {
         cameraTransform = Camera.main.transform;
+        SetFacing(true);
     }
 
     void FixedUpdate()
     {
-        if (spriteRenderer == null) return;
         Vector3 toCamera = cameraTransform.position - transform.position;
         bool cameraSeesFront = Vector3.Dot(transform.forward, toCamera) > 0f;
 
-        spriteRenderer.sprite = cameraSeesFront ? frontSprite : backSprite;
-        // Al ver el mismo quad desde su lado trasero, la textura se ve espejada;
-        // flipX compensa esto para que el sprite de espalda no salga invertido.
-        spriteRenderer.flipX = !cameraSeesFront;
+        if (cameraSeesFront != showingForward)
+            SetFacing(cameraSeesFront);
+    }
+
+    private void SetFacing(bool front)
+    {
+        showingForward = front;
+        forwardSprite.SetActive(front);
+        backwardSprite.SetActive(!front);
     }
 }
