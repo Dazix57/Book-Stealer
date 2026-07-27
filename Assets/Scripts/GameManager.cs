@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     private void HandlePlayerDeath()
     {
         Debug.Log("Restarting...");
+        
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

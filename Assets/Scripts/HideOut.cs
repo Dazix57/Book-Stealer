@@ -22,6 +22,11 @@ public class HideOut : MonoBehaviour
     [SerializeField]
     private EnemyController enemy;
 
+    // Si el enemigo está más lejos que esto cuando el jugador se esconde,
+    // pierde el rastro; si está más cerca, va directo hacia el escondite.
+    [SerializeField]
+    private float hideDetectionRange = 3.5f;
+
     private bool inRange = false;
     private bool isHidden = false;
     private GameObject player;
@@ -78,7 +83,22 @@ public class HideOut : MonoBehaviour
     void Hide(Vector3 hideoutPos)
     {
         if (player == null) return;
-        if (enemy != null && enemy.InChase) return;
+
+        if (enemy != null && enemy.InChase && !enemy.IsStunned)
+        {
+            float distanceToPlayer = Vector3.Distance(enemy.transform.position, player.transform.position);
+
+            if (distanceToPlayer > hideDetectionRange)
+            {
+                // El enemigo está lo bastante lejos: pierde el rastro y pasa a buscar
+                enemy.LosePlayerAt(player.transform.position);
+            }
+            else
+            {
+                // El enemigo está demasiado cerca: alcanza a ver hacia dónde se metió
+                enemy.InvestigateHideout(hideoutPos);
+            }
+        }
 
         promptPanel.SetActive(false);
 
