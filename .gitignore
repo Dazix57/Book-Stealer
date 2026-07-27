@@ -115,3 +115,6 @@ InitTestScene*.unity*
 graphify-out/
 .graphify/
 .graphifyignore
+
+# claude
+CLAUDE.md

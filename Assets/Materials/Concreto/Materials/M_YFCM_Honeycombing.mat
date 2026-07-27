@@ -29,13 +29,17 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 410cdf7c54030934ba972cf49707a0e4, type: 3}
+        m_Scale: {x: -0.87, y: 0.71}
+        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 2800000, guid: 58955d9e7c6a45840afbdfc31c3660c5, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 410cdf7c54030934ba972cf49707a0e4, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: -0.87, y: 0.71}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
         m_Texture: {fileID: 2800000, guid: bfdabb4ab22f42042b01233bf97ae564, type: 3}
