@@ -46,7 +46,7 @@ public class PlayerHandler : MonoBehaviour
 
     // Health setup
     [SerializeField] private float maxHealth = 100f;
-    [SerializeField] private float damagePerSecond = 25f;
+    [SerializeField] private float damagePerSecond = 75f;
     private float currentHealth;
     private bool isDead;
 
@@ -136,8 +136,6 @@ public class PlayerHandler : MonoBehaviour
         if (CanMove) MoveRigidbody();
     }
 
-    
-
     private void OnTriggerStay(Collider collision)
     {
         if (collision.CompareTag("Enemy"))
@@ -145,18 +143,17 @@ public class PlayerHandler : MonoBehaviour
             if (IsParrying == true && Time.time >= ParryDebounce)
             {
                 ParryDebounce = Time.time + ParryCD;
-                Rigidbody Enemy_RB = collision.GetComponent<Rigidbody>();
+                EnemyController Enemy_Controller = collision.GetComponent<EnemyController>();
                 StartCoroutine(CooldownRoutine());
-                // Check if the object has a valid Rigidbody that is not kinematic
-                if (Enemy_RB == null ) return;
+                if (Enemy_Controller == null) return;
 
                 Vector3 pushDirection = collision.transform.position - transform.position;
                 pushDirection.y = 0; // Keep the push flat on the ground if needed
                 pushDirection.Normalize();
 
                 Debug.Log("Parried monster...");
-                // Apply an instant force to send the box away
-                Enemy_RB.AddForce(pushDirection * 8000f); //* Enemy_RB.mass * Enemy_RB.linearDamping);
+                // Aturde al enemigo y lo aleja; retomará la búsqueda cuando pase el aturdimiento
+                Enemy_Controller.Parry(pushDirection);
             } else
             {
                 TakeDamage(damagePerSecond * Time.fixedDeltaTime);
@@ -348,6 +345,7 @@ public class PlayerHandler : MonoBehaviour
         }
         else
         {
+            if (coolDownMessage == null) return;
             coolDownMessage.transform.GetChild(0).gameObject.SetActive(markerCooldown.Running);
             TextMeshProUGUI panel = coolDownMessage.transform.GetChild(0).GetComponentInChildren<TextMeshProUGUI>();
             panel.text = $"Mark available in {Mathf.CeilToInt(markerCooldown.Remaining)} s";
