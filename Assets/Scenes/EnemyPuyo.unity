@@ -2384,6 +2384,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 940629838810530442, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
+      propertyPath: sprintKey
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 940629838810530442, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: maxLookDownAngle
       value: 40
       objectReference: {fileID: 0}

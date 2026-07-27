@@ -11,6 +11,8 @@ public class PlayerHandler : MonoBehaviour
 {
     [SerializeField]
     private float speed;
+    [SerializeField]
+    private float sprintMultiplier;
 
     [SerializeField]
     private float mouseSensitivity;
@@ -44,6 +46,7 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private Key crouchKey;
     [SerializeField] private Key parryKey;
     [SerializeField] private Key pickUpKey;
+    [SerializeField] private Key sprintKey;
     [SerializeField] private Key objectiveMark;
 
     // Parry setup
@@ -236,6 +239,15 @@ public class PlayerHandler : MonoBehaviour
         } else
         {
             IsCrouching = false;
+        }
+
+        if (Keyboard.current[sprintKey].IsPressed())
+        {
+            speed += sprintMultiplier;
+        }
+        else if (Keyboard.current[sprintKey].wasReleasedThisFrame)
+        {
+            speed /= sprintMultiplier;
         }
 
         // Revisa que el jugador pueda visualizar el marcador
