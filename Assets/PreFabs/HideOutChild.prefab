@@ -180,7 +180,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &8860029376015138722
 MonoBehaviour:
@@ -202,3 +202,5 @@ MonoBehaviour:
   - {fileID: 5107639198532486358}
   - {fileID: 1374911923680352476}
   - {fileID: 956665170650076395}
+  enemy: {fileID: 0}
+  hideDetectionRange: 3.5

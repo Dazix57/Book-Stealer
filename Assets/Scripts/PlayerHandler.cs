@@ -12,6 +12,8 @@ public class PlayerHandler : MonoBehaviour
 {
     [SerializeField]
     private float speed;
+    [SerializeField]
+    private float sprintMultiplier = 2.0f;
 
     [SerializeField]
     private float mouseSensitivity;
@@ -46,6 +48,7 @@ public class PlayerHandler : MonoBehaviour
     private float PushForce;
 
     [SerializeField] private Key crouchKey;
+    [SerializeField] private Key sprintKey;
     [SerializeField] private Key parryKey;
     [SerializeField] private Key pickUpKey;
     [SerializeField] private Key objectiveMark;
@@ -87,6 +90,13 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private float sneakSpeedMultiplier = 0.5f; // Velocidad mientras se está sneakeando, fijo sin importar cuánto se haya usado
     private float sneakMeter;
     private bool sneakExhausted = false; // true tras agotar el medidor; obliga a soltar la tecla antes de volver a sneakear
+    private bool isSprinting = false;
+
+    // Sprint / stamina setup
+    [SerializeField] private float sprintStaminaDuration = 5f; // segundos de sprint continuo hasta vaciar el medidor
+    [SerializeField] private float staminaRegenRate = 0.2f; // fracción del medidor por segundo mientras no se está corriendo
+    [SerializeField] private UnityEngine.UI.Image staminaBar; // barra vertical rellenable sobre el texto del parry
+    private float staminaMeter = 1f; // 1 = lleno, 0 = vacío
 
     // Referencia al collider que puso inObjectiveArea en true, para poder resetearlo
     // al salir aunque su hijo 'Mark' ya no exista (ej. si el área se completó
@@ -100,6 +110,14 @@ public class PlayerHandler : MonoBehaviour
 
     [SerializeField] private GameObject coolDownMessagePreFab;
     private GameObject coolDownMessage;
+
+    // Distancia del rayo que detecta escondites (HideOut) frente al jugador
+    [SerializeField] private float hideOutDetectionDistance = 5f;
+    // Intensidad del resaltado (emisión aditiva): bajo para que sea un brillo
+    // suave y transparente y no tape la textura del mueble.
+    [SerializeField] private float hideOutHighlightIntensity = 0.05f;
+    private Renderer highlightedHideOutRenderer = null;
+    private Color highlightedHideOutOriginalEmission;
 
     // Evita que Update() use referencias (coolDownMessage, markerCooldown, etc.)
     // antes de que Awake() termine de inicializarlas, o luego de que una recarga
@@ -183,6 +201,14 @@ public class PlayerHandler : MonoBehaviour
         // Instancia del prefab 'coolDownMessagePreFab'
         coolDownMessage = Instantiate<GameObject>(coolDownMessagePreFab, Camera.main.transform.position, Quaternion.identity);
 
+        // Stamina bar: fuerza el tipo de relleno para que funcione como barra vertical
+        if (staminaBar != null)
+        {
+            staminaBar.type = UnityEngine.UI.Image.Type.Filled;
+            staminaBar.fillMethod = UnityEngine.UI.Image.FillMethod.Vertical;
+            staminaBar.fillAmount = staminaMeter;
+        }
+
         isInitialized = true;
     }
 
@@ -199,11 +225,15 @@ public class PlayerHandler : MonoBehaviour
         }
 
         UpdateSneakMeter();
+        UpdateStamina();
         UpdateParry();
         UpdateParryLabel();
 
         // revisa si puede enseñar el marcador del objetivo
         EnableObjectiveMark();
+
+        // revisa si hay un escondite frente al jugador y lo resalta
+        CheckForHideOut();
     }
 
     private void FixedUpdate()
@@ -349,6 +379,9 @@ public class PlayerHandler : MonoBehaviour
             sneakExhausted = false;
         }
 
+        // -- Detect sprint input (no se puede iniciar sin stamina disponible)
+        isSprinting = Keyboard.current[sprintKey].isPressed && staminaMeter > 0f;
+
         // No se puede sneakear si el medidor ya se agotó, ni mientras se está escondido o parriando
         IsCrouching = crouchKeyHeld && !sneakExhausted && !isHidden && !isParryActive;
 
@@ -427,6 +460,33 @@ public class PlayerHandler : MonoBehaviour
         }
     }
 
+    // Drena el medidor de stamina mientras se corre de verdad (no cuenta si el
+    // sprint no se está aplicando, ej. agachado o parriando); lo regenera el
+    // resto del tiempo. Corta el sprint en cuanto se vacía.
+    private void UpdateStamina()
+    {
+        bool effectivelySprinting = isSprinting && !IsCrouching && !isParryActive;
+
+        if (effectivelySprinting)
+        {
+            staminaMeter = Mathf.Max(0f, staminaMeter - Time.deltaTime / sprintStaminaDuration);
+
+            if (staminaMeter <= 0f)
+            {
+                isSprinting = false;
+            }
+        }
+        else
+        {
+            staminaMeter = Mathf.Min(1f, staminaMeter + staminaRegenRate * Time.deltaTime);
+        }
+
+        if (staminaBar != null)
+        {
+            staminaBar.fillAmount = staminaMeter;
+        }
+    }
+
     private void RotateRigidbody()
     {
         yaw += mouseX;
@@ -456,6 +516,10 @@ public class PlayerHandler : MonoBehaviour
         else if (IsCrouching)
         {
             currentSpeed = speed * sneakSpeedMultiplier;
+        }
+        else if (isSprinting)
+        {
+            currentSpeed = speed * sprintMultiplier;
         }
 
         Vector3 velocity = (transform.forward * inputDirection.z + transform.right * inputDirection.x) * currentSpeed;
@@ -536,6 +600,42 @@ public class PlayerHandler : MonoBehaviour
             coolDownMessage.transform.GetChild(0).gameObject.SetActive(markerCooldown.Running);
             TextMeshProUGUI panel = coolDownMessage.transform.GetChild(0).GetComponentInChildren<TextMeshProUGUI>();
             panel.text = $"Mark available in {Mathf.CeilToInt(markerCooldown.Remaining)} s";
+        }
+    }
+
+    // Tira un rayo desde la cabeza (cámara) del jugador y, si golpea el collider
+    // de un escondite (tag 'HideOut' en el propio collider), resalta en blanco
+    // el Renderer del escondite. Usa GetComponentInParent porque el collider
+    // golpeado puede ser el trigger hijo (ej. HideOutChild) que no tiene
+    // Renderer propio; el mueble visible está en el padre. Restaura el color
+    // original en cuanto el rayo deja de apuntarlo.
+    private void CheckForHideOut()
+    {
+        Renderer hitRenderer = null;
+
+        if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out RaycastHit hit, hideOutDetectionDistance))
+        {
+            if (hit.collider.transform.CompareTag("HideOut"))
+            {
+                hitRenderer = hit.collider.GetComponentInParent<Renderer>();
+            }
+        }
+
+        if (hitRenderer == highlightedHideOutRenderer) return;
+
+        if (highlightedHideOutRenderer != null)
+        {
+            highlightedHideOutRenderer.material.SetColor("_EmissionColor", highlightedHideOutOriginalEmission);
+        }
+
+        highlightedHideOutRenderer = hitRenderer;
+
+        if (highlightedHideOutRenderer != null)
+        {
+            Material hitMaterial = highlightedHideOutRenderer.material;
+            hitMaterial.EnableKeyword("_EMISSION");
+            highlightedHideOutOriginalEmission = hitMaterial.GetColor("_EmissionColor");
+            hitMaterial.SetColor("_EmissionColor", Color.lightCyan * hideOutHighlightIntensity);
         }
     }
 
