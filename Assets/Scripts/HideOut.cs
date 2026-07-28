@@ -19,13 +19,27 @@ public class HideOut : MonoBehaviour
     [SerializeField]
     private Transform[] faces;
 
-    [SerializeField]
-    private EnemyController enemy;
+    // Todos los enemigos activos de la escena (puede haber una cantidad variable, y cualquiera
+    // de ellos puede terminar cerca de este escondite), obtenidos una vez en Awake().
+    private EnemyController[] enemies;
 
-    // Si el enemigo está más lejos que esto cuando el jugador se esconde,
-    // pierde el rastro; si está más cerca, va directo hacia el escondite.
+    // Si un enemigo está más lejos que esto cuando el jugador se esconde, pierde el rastro
+    // (Searching); si está más cerca, no entra en Searching/Confused: sigue directo hacia el
+    // escondite y, al llegar, saca al jugador a la fuerza (ver EnemyController.ForceApproach).
     [SerializeField]
-    private float hideDetectionRange = 3.5f;
+    private float forceExtractionRange = 8f;
+    // Ese rango también escala con cuántas veces hayan parriado a cada enemigo (igual que sus
+    // otros stats en EnemyController), +10% por parry.
+    [SerializeField]
+    private float forceExtractionRangeIncreasePerParry = 0.1f;
+
+    // Anti-cheese: pasado este tiempo escondido sin interrupción, el jugador empieza a perder
+    // vida (para que esconderse no sea una estrategia segura indefinidamente).
+    [SerializeField]
+    private float hideCheeseGraceDuration = 10f;
+    [SerializeField]
+    private float hideCheeseDamagePerSecond = 15f;
+    private float hiddenTimer = 0f;
 
     private bool inRange = false;
     private bool isHidden = false;
@@ -41,6 +55,7 @@ public class HideOut : MonoBehaviour
     void Awake()
     {
         promptPanel = Instantiate<GameObject>(hidePromptPanelPreFab, Camera.main.transform.position, Quaternion.identity);
+        enemies = FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
     }
     void Update()
     {
@@ -58,6 +73,30 @@ public class HideOut : MonoBehaviour
                 Hide(transform.position);
             }
         }
+
+        UpdateHideCheeseDamage();
+    }
+
+    // Anti-cheese: mientras siga escondido más allá de hideCheeseGraceDuration, empieza a
+    // perder vida cada frame (hideCheeseDamagePerSecond repartido por Time.deltaTime).
+    void UpdateHideCheeseDamage()
+    {
+        if (!isHidden)
+        {
+            hiddenTimer = 0f;
+            return;
+        }
+
+        hiddenTimer += Time.deltaTime;
+        if (hiddenTimer > hideCheeseGraceDuration && playerHandler != null)
+        {
+            playerHandler.ApplyDamage(hideCheeseDamagePerSecond * Time.deltaTime);
+        }
+    }
+
+    float EffectiveForceExtractionRange(EnemyController enemyController)
+    {
+        return forceExtractionRange * (1f + forceExtractionRangeIncreasePerParry * enemyController.ParryCount);
     }
 
     void OnTriggerEnter(Collider other)
@@ -89,19 +128,25 @@ public class HideOut : MonoBehaviour
     {
         if (player == null) return;
 
-        if (enemy != null && enemy.InChase && !enemy.IsStunned)
+        foreach (EnemyController enemyController in enemies)
         {
-            float distanceToPlayer = Vector3.Distance(enemy.transform.position, player.transform.position);
+            // La extracción forzosa (y la pérdida de rastro hacia Searching) quedan reservadas
+            // a Chasing: si el enemigo está en Windup, ya buscando, confundido o aturdido,
+            // esconderse no lo redirige ni lo hace reaccionar.
+            if (enemyController == null || !enemyController.IsChasing) continue;
 
-            if (distanceToPlayer > hideDetectionRange)
+            float distanceToPlayer = Vector3.Distance(enemyController.transform.position, player.transform.position);
+
+            if (distanceToPlayer <= EffectiveForceExtractionRange(enemyController))
             {
-                // El enemigo está lo bastante lejos: pierde el rastro y pasa a buscar
-                enemy.LosePlayerAt(player.transform.position);
+                // Este enemigo está demasiado cerca: no pierde el rastro ni se pone a investigar,
+                // sigue directo hacia el escondite y saca al jugador a la fuerza al llegar.
+                enemyController.ForceApproach(hideoutPos, ForceExtractPlayer);
             }
             else
             {
-                // El enemigo está demasiado cerca: alcanza a ver hacia dónde se metió
-                enemy.InvestigateHideout(hideoutPos);
+                // Este enemigo está lo bastante lejos: pierde el rastro y pasa a buscar
+                enemyController.LosePlayerAt(player.transform.position);
             }
         }
 
@@ -157,6 +202,19 @@ public class HideOut : MonoBehaviour
         }
 
         hideRoutine = StartCoroutine(TransitionRoutine(player.transform.position, player.transform.rotation, originalPos, originalRot, false));
+    }
+
+    // Pasado como callback a EnemyController.ForceApproach(): lo saca del escondite en cuanto
+    // un enemigo llega, sin que el jugador tenga que presionar E. Si ya había salido por su
+    // cuenta, o ya lo sacó otro enemigo que llegó primero, no hace nada.
+    void ForceExtractPlayer()
+    {
+        if (!isHidden) return;
+
+        // Se pone en false de inmediato (no se espera a que termine la corrutina) para que, si
+        // varios enemigos convergen casi al mismo tiempo, solo el primero dispare la animación.
+        isHidden = false;
+        Unhide();
     }
 
     IEnumerator TransitionRoutine(Vector3 startPos, Quaternion startRot, Vector3 endPos, Quaternion endRot, bool hidingIntoSpot)

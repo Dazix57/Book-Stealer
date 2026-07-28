@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -11,7 +12,8 @@ public class EnemyController : MonoBehaviour
         Chasing,
         Searching,
         Confused,
-        Stunned
+        Stunned,
+        ForceApproach
     }
 
     // Atributos personalizables
@@ -21,8 +23,12 @@ public class EnemyController : MonoBehaviour
     private float fieldOfView;
     [SerializeField]
     private float viewDistance;
-    [SerializeField]
+
+    // Subconjunto de PatrolWaypoint de la escena que le toca patrullar a este enemigo,
+    // calculado una vez en Awake() (ver AssignedWaypoints): ya no hace falta asignarle a mano
+    // el recorrido a cada enemigo por separado, y cada uno cubre su propia zona sin superponerse.
     private Transform[] points;
+
     [SerializeField]
     private float patrolPauseMinDuration = 0.5f; // Espera al llegar a un punto antes de ir al siguiente
     [SerializeField]
@@ -31,7 +37,7 @@ public class EnemyController : MonoBehaviour
     // Si el jugador está dentro de este rango, el enemigo nunca lo pierde de vista
     // (evita falsos negativos del raycast/FOV cuando el jugador está pegado al enemigo)
     [SerializeField]
-    private float closeRangeDistance = 15f;
+    private float closeRangeDistance = 20f;
 
     // Windup: gira hacia el jugador antes de empezar la persecución
     [SerializeField]
@@ -79,6 +85,37 @@ public class EnemyController : MonoBehaviour
     [Range(0f, 1f)]
     private float maxSearchChanceOnHear = 0.95f; // probabilidad de Searching si el paso ocurre justo encima del enemigo
 
+    // Escalada por parry: cada vez que este enemigo es parriado (ver Parry() y parryCount más
+    // abajo) se vuelve más agresivo. Todos estos incrementos son acumulativos (parryCount veces).
+    [Header("Escalada por parry")]
+    [SerializeField]
+    private float searchChanceOnLoseSightBase = 0.5f; // probabilidad base de Searching (vs Confused) al perder de vista en Chasing
+    [SerializeField]
+    private float searchChanceIncreasePerParry = 0.1f; // se suma a esa base, y también a la de la detección por oído, por cada parry
+    [SerializeField]
+    private float searchDurationMultiplierPerParry = 0.5f; // +50% de duración de Searching por parry
+    [SerializeField]
+    private float confusedDurationMultiplierPerParry = 0.5f; // -50% de duración de Confused por parry (con piso en 0)
+    [SerializeField]
+    private float rangeIncreasePerParry = 0.25f; // +25% al closeRangeDistance y al hearingRange, por parry
+    [SerializeField]
+    private int maxParryTintStacks = 5; // parries para llegar al verde completo (sprite y luz de patrullaje)
+    private int parryCount = 0;
+
+    // Consultado por HideOut para escalar su propio rango de extracción forzada por parry
+    public int ParryCount => parryCount;
+
+    // Aumenta con cada parry recibido; usado en CanSeePlayerWhileEngaged
+    float EffectiveCloseRangeDistance => closeRangeDistance * (1f + rangeIncreasePerParry * parryCount);
+
+    [SerializeField]
+    private float baseSpeedIncreasePerParry = 0.05f; // +5% de velocidad base por parry (patrullaje Y persecución, ya que esta última se deriva de la base)
+
+    // Velocidad base ya escalada por parries; se usa en vez de baseSpeed en todos lados
+    float EffectiveBaseSpeed => baseSpeed * (1f + baseSpeedIncreasePerParry * parryCount);
+
+    float ParryTintProgress => maxParryTintStacks > 0 ? Mathf.Clamp01((float)parryCount / maxParryTintStacks) : 1f;
+
     // Atributos de control
     private GameObject player;
     private PlayerHandler playerHandler;
@@ -93,6 +130,16 @@ public class EnemyController : MonoBehaviour
     private Coroutine knockbackRoutine;
     private bool chaseTrackingActive; // evita registrar/desregistrar la persecución más de una vez (AudioManager + ChaseStarted/Ended)
 
+    // ForceApproach: usado por HideOut cuando el jugador se esconde demasiado cerca del enemigo.
+    // El destino (ej. el interior de un mueble) suele estar fuera del NavMesh -- el agente solo
+    // puede acercarse hasta el punto transitable más próximo, así que la llegada se mide por
+    // distancia física real a forceApproachTarget, no por NavMeshAgent.remainingDistance (que mide
+    // contra el destino ya recortado al NavMesh y puede no bajar nunca de un umbral chico).
+    [SerializeField]
+    private float forceApproachArrivalDistance = 2.5f; // qué tan cerca del destino cuenta como "llegó"
+    private Vector3 forceApproachTarget;
+    private System.Action onForceApproachArrived;
+
     // Atributos de patrullaje
     private int destPoint;
     private int repeatCount;
@@ -100,21 +147,36 @@ public class EnemyController : MonoBehaviour
     private float patrolPauseTimer;
 
     private Light EnemyLight;
+    private float originalLightRange; // capturado en Awake(); ver UpdateParryLightScale
+    private float originalLightIntensity; // ídem, escala en la misma proporción que el rango
 
-    // Silueta que se ve a través de paredes mientras el jugador está agachado (ver UpdateHighlight).
-    // Es una copia más grande del sprite real, creada en runtime, usando el shader Custom/SpriteXRay
-    // (ZTest Always) para que se dibuje encima de cualquier obstáculo de la escena.
-    [SerializeField] private Color highlightColor = new Color(1f, 0.85f, 0.2f, 0.6f);
-    [SerializeField] private float highlightScale = 1.15f;
-    private SpriteRenderer spriteRenderer;
-    private SpriteRenderer highlightRenderer;
+    // El sprite (forward/backward) y su silueta de resalte mientras el jugador está agachado
+    // viven en EnemyFacingSprite; solo se le pide que la muestre u oculte.
+    private EnemyFacingSprite facingSprite;
 
-    private Color InitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
-    private Color EngageColor = Color.red;
-    private Color SearchColor = Color.gray; // Color al que se apaga la luz durante Searching
-    private Color ConfusedColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color al que vira la luz durante Confused
+    // Colores base (0 parries) de cada estado. Con cada parry, TODOS viran hacia distintos tonos
+    // de verde: Patrolling llega a lightGreenTint, Chase (Engage) a darkGreenTint, y Confused/Search
+    // quedan en puntos intermedios entre ambos (ver las properties InitialColor/EngageColor/etc.
+    // más abajo, que son las que de verdad se usan en el resto de la clase).
+    private Color baseInitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
+    private Color baseEngageColor = Color.red;
+    private Color baseSearchColor = Color.gray; // Color al que se apaga la luz durante Searching
+    private Color baseConfusedColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color al que vira la luz durante Confused
     private Color windupStartColor; // Color de luz al entrar en Windup (varía según de dónde venga)
     private Color stunStartColor; // Color de luz al entrar en Stunned (varía según de dónde venga)
+
+    [Header("Tinte verde por parry (colores de luz)")]
+    [SerializeField]
+    private Color lightGreenTint = new Color(0.65f, 1f, 0.55f); // color de Patrolling en maxParryTintStacks
+    [SerializeField]
+    private Color darkGreenTint = new Color(0.05f, 0.25f, 0.05f); // color de Chase en maxParryTintStacks
+
+    // Las que realmente se usan en el resto de la clase: lerpean desde el color base hacia el
+    // tono de verde que le corresponde a cada estado, según ParryTintProgress (0 = sin parries).
+    Color InitialColor => Color.Lerp(baseInitialColor, lightGreenTint, ParryTintProgress);
+    Color EngageColor => Color.Lerp(baseEngageColor, darkGreenTint, ParryTintProgress);
+    Color SearchColor => Color.Lerp(baseSearchColor, Color.Lerp(lightGreenTint, darkGreenTint, 2f / 3f), ParryTintProgress);
+    Color ConfusedColor => Color.Lerp(baseConfusedColor, Color.Lerp(lightGreenTint, darkGreenTint, 1f / 3f), ParryTintProgress);
 
     // Estado público (consultado por otros scripts, ej. HideOut)
     public bool InChase
@@ -125,6 +187,13 @@ public class EnemyController : MonoBehaviour
     public bool IsStunned
     {
         get { return state == EnemyState.Stunned; }
+    }
+
+    // Consultado por HideOut: la extracción forzosa de un escondite está reservada a Chasing
+    // (ver Hide()); Windup/Searching/Confused ya no pueden disparar ni esa ni la búsqueda normal.
+    public bool IsChasing
+    {
+        get { return state == EnemyState.Chasing; }
     }
 
     // Notifica cuando el primer/último enemigo entra o sale de persecución (comparte el mismo
@@ -156,21 +225,29 @@ public class EnemyController : MonoBehaviour
 
     // Detección por oído: puede hacer que el enemigo entre en Searching (hacia la posición del
     // paso) o en Confused, con más probabilidad de Searching cuanto más cerca se oyó el paso.
+    // Si el paso sonó mientras el jugador sprintaba, entra en Searching directo, sin roll.
     // Se ignora por completo mientras el enemigo esté en cualquier estado que no sea Patrolling
     // (la detección visual manda: no debe interrumpir una persecución en curso ni reactivar
     // Searching/Confused justo después de haber perdido al jugador por vista).
-    void OnPlayerFootstepHeard(Vector3 position, float loudness)
+    void OnPlayerFootstepHeard(Vector3 position, float loudness, bool wasSprinting)
     {
         if (InChase) return;
 
-        float effectiveRange = hearingRange * loudness;
+        float effectiveHearingRange = hearingRange * (1f + rangeIncreasePerParry * parryCount);
+        float effectiveRange = effectiveHearingRange * loudness;
         float distance = Vector3.Distance(transform.position, position);
         if (distance > effectiveRange) return;
 
-        float proximity = effectiveRange > 0f ? 1f - Mathf.Clamp01(distance / effectiveRange) : 1f;
-        float searchChance = Mathf.Lerp(minSearchChanceOnHear, maxSearchChanceOnHear, proximity);
+        bool goesToSearch = wasSprinting;
+        if (!goesToSearch)
+        {
+            float proximity = effectiveRange > 0f ? 1f - Mathf.Clamp01(distance / effectiveRange) : 1f;
+            float searchChance = Mathf.Lerp(minSearchChanceOnHear, maxSearchChanceOnHear, proximity);
+            searchChance = Mathf.Clamp01(searchChance + searchChanceIncreasePerParry * parryCount);
+            goesToSearch = Random.value < searchChance;
+        }
 
-        if (Random.value < searchChance)
+        if (goesToSearch)
         {
             lastKnownPlayerPosition = position;
             EnterSearching(position);
@@ -187,6 +264,10 @@ public class EnemyController : MonoBehaviour
         destPoint = 0;
         repeatCount = 0;
         state = EnemyState.Patrolling;
+
+        // Recorrido de patrullaje: solo los PatrolWaypoint más cercanos a este enemigo que a
+        // cualquier otro (ver AssignedWaypoints), para que cada uno cubra su propia zona.
+        points = AssignedWaypoints();
 
         // Referencia al jugador
         player = GameObject.FindGameObjectWithTag("Player");
@@ -214,52 +295,69 @@ public class EnemyController : MonoBehaviour
         baseSpeed = enemyAgent.speed;
 
         EnemyLight = GetComponent<Light>();
+        originalLightRange = EnemyLight.range;
+        originalLightIntensity = EnemyLight.intensity;
 
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        highlightRenderer = CreateHighlightRenderer();
+        facingSprite = GetComponent<EnemyFacingSprite>();
 
         GotoNextPoint();
     }
 
-    // Crea, en runtime, la silueta ampliada usada para resaltar al enemigo mientras el jugador
-    // está agachado. No requiere ningún objeto o material configurado de antemano en el prefab.
-    SpriteRenderer CreateHighlightRenderer()
+    // Reparte todos los PatrolWaypoint de la escena entre los enemigos por cercanía: cada
+    // waypoint le toca al enemigo más cercano a él. Como esto se recalcula igual (y de forma
+    // determinística) en el Awake() de cada enemigo, todos llegan al mismo reparto sin
+    // necesitar coordinarse, y ningún waypoint termina asignado a más de uno.
+    Transform[] AssignedWaypoints()
     {
-        GameObject highlightObject = new GameObject("HighlightOutline");
-        Transform highlightTransform = highlightObject.transform;
-        highlightTransform.SetParent(transform, false);
-        highlightTransform.localPosition = Vector3.zero;
-        highlightTransform.localRotation = Quaternion.identity;
-        highlightTransform.localScale = Vector3.one * highlightScale;
+        PatrolWaypoint[] waypoints = FindObjectsByType<PatrolWaypoint>(FindObjectsSortMode.None);
+        EnemyController[] allEnemies = FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
 
-        SpriteRenderer highlight = highlightObject.AddComponent<SpriteRenderer>();
-        highlight.sprite = spriteRenderer.sprite;
-        highlight.color = highlightColor;
-        highlight.sortingOrder = spriteRenderer.sortingOrder - 1;
-        highlight.material = new Material(Shader.Find("Custom/SpriteXRay"));
-        highlight.enabled = false;
-        return highlight;
+        List<Transform> assigned = new List<Transform>();
+        foreach (PatrolWaypoint waypoint in waypoints)
+        {
+            EnemyController closestEnemy = null;
+            float closestDistance = float.PositiveInfinity;
+
+            foreach (EnemyController candidate in allEnemies)
+            {
+                float distance = Vector3.Distance(candidate.transform.position, waypoint.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestEnemy = candidate;
+                }
+            }
+
+            if (closestEnemy == this)
+            {
+                assigned.Add(waypoint.transform);
+            }
+        }
+
+        return assigned.ToArray();
     }
 
-    // Mientras el jugador está agachado, muestra la silueta ampliada (visible a través de
-    // paredes) y la mantiene sincronizada con el sprite real, que cambia entre frente/espalda.
+    // Mientras el jugador está agachado, le pide a EnemyFacingSprite que muestre la silueta
+    // (visible a través de paredes) del sprite forward/backward que esté activo en ese momento.
     void UpdateHighlight()
     {
-        bool shouldHighlight = playerHandler.Crouching;
-        if (highlightRenderer.enabled != shouldHighlight)
-        {
-            highlightRenderer.enabled = shouldHighlight;
-        }
+        facingSprite.SetHighlighted(playerHandler.Crouching);
+    }
 
-        if (shouldHighlight)
-        {
-            highlightRenderer.sprite = spriteRenderer.sprite;
-        }
+    // Aumento visual puro: el rango Y la intensidad de la luz crecen, en la misma proporción,
+    // con el mismo porcentaje por parry que closeRangeDistance/hearingRange. Independiente
+    // del color, así que corre siempre, sin importar el estado.
+    void UpdateParryLightScale()
+    {
+        float scale = 1f + rangeIncreasePerParry * parryCount;
+        EnemyLight.range = originalLightRange * scale;
+        EnemyLight.intensity = originalLightIntensity * scale;
     }
 
     void Update()
     {
         UpdateHighlight();
+        UpdateParryLightScale();
 
         switch (state)
         {
@@ -280,6 +378,9 @@ public class EnemyController : MonoBehaviour
                 break;
             case EnemyState.Stunned:
                 UpdateStunned();
+                break;
+            case EnemyState.ForceApproach:
+                UpdateForceApproach();
                 break;
         }
     }
@@ -317,13 +418,15 @@ public class EnemyController : MonoBehaviour
             return true;
         }
 
+        float effectiveCloseRangeDistance = EffectiveCloseRangeDistance;
+
         Vector3 directionToPlayer = seenPosition - transform.position;
-        if (directionToPlayer.sqrMagnitude > closeRangeDistance * closeRangeDistance)
+        if (directionToPlayer.sqrMagnitude > effectiveCloseRangeDistance * effectiveCloseRangeDistance)
         {
             return false;
         }
 
-        return Physics.Raycast(transform.position, directionToPlayer.normalized, out RaycastHit hit, closeRangeDistance)
+        return Physics.Raycast(transform.position, directionToPlayer.normalized, out RaycastHit hit, effectiveCloseRangeDistance)
             && hit.collider.gameObject.CompareTag("Player");
     }
 
@@ -387,21 +490,28 @@ public class EnemyController : MonoBehaviour
 
         enemyAgent.isStopped = false;
         enemyAgent.updateRotation = true;
-        enemyAgent.speed = baseSpeed * chaseMultiplier; // Aumenta velocidad en persecución
+        enemyAgent.speed = EffectiveBaseSpeed * chaseMultiplier; // Aumenta velocidad en persecución
 
         lastKnownPlayerPosition = player.transform.position;
         playerMoveDirection = transform.forward;
 
-        if (!chaseTrackingActive)
-        {
-            chaseTrackingActive = true;
-            AudioManager.EnemyStartedChasing();
+        StartChaseTracking();
+    }
 
-            globalChaseCount++;
-            if (globalChaseCount == 1)
-            {
-                ChaseStarted?.Invoke();
-            }
+    // Activa el override de BS_Chase / camera shake, si este enemigo no lo tenía ya activo
+    // (se usa tanto al entrar en Chasing como en ForceApproach: para el jugador, ambos son
+    // "me está persiguiendo activamente").
+    void StartChaseTracking()
+    {
+        if (chaseTrackingActive) return;
+
+        chaseTrackingActive = true;
+        AudioManager.EnemyStartedChasing();
+
+        globalChaseCount++;
+        if (globalChaseCount == 1)
+        {
+            ChaseStarted?.Invoke();
         }
     }
 
@@ -418,7 +528,16 @@ public class EnemyController : MonoBehaviour
         }
         else
         {
-            EnterSearching();
+            // Cuanto más lo hayan parriado, más probable que pase a Searching en vez de Confused
+            float searchChance = Mathf.Clamp01(searchChanceOnLoseSightBase + searchChanceIncreasePerParry * parryCount);
+            if (Random.value < searchChance)
+            {
+                EnterSearching();
+            }
+            else
+            {
+                EnterConfused();
+            }
         }
     }
 
@@ -456,7 +575,8 @@ public class EnemyController : MonoBehaviour
     void EnterSearching(Vector3 destination)
     {
         state = EnemyState.Searching;
-        stateTimer = Random.Range(searchMinDuration, searchMaxDuration);
+        float baseDuration = Random.Range(searchMinDuration, searchMaxDuration);
+        stateTimer = baseDuration * (1f + searchDurationMultiplierPerParry * parryCount);
         stateDurationTotal = stateTimer;
 
         enemyAgent.isStopped = false;
@@ -495,7 +615,8 @@ public class EnemyController : MonoBehaviour
     void EnterConfused(float duration)
     {
         state = EnemyState.Confused;
-        stateTimer = duration;
+        float multiplier = Mathf.Max(0f, 1f - confusedDurationMultiplierPerParry * parryCount);
+        stateTimer = duration * multiplier;
         stateDurationTotal = stateTimer;
         confusedSnapTimer = 0f;
 
@@ -545,7 +666,7 @@ public class EnemyController : MonoBehaviour
 
         enemyAgent.isStopped = false;
         enemyAgent.updateRotation = true;
-        enemyAgent.speed = baseSpeed;
+        enemyAgent.speed = EffectiveBaseSpeed;
 
         EnemyLight.color = InitialColor;
 
@@ -558,6 +679,9 @@ public class EnemyController : MonoBehaviour
     // y lo deja completamente inmóvil unos segundos antes de retomar la búsqueda.
     public void Parry(Vector3 knockbackDirection)
     {
+        parryCount++;
+        facingSprite.SetParryTint(ParryTintProgress);
+
         state = EnemyState.Stunned;
         stateTimer = stunDuration;
         stunStartColor = EnemyLight.color;
@@ -654,12 +778,37 @@ public class EnemyController : MonoBehaviour
         EnterSearching(lastSeenPosition);
     }
 
-    // Llamado por HideOut cuando el jugador se esconde estando demasiado cerca
-    // del enemigo: este alcanza a notar hacia dónde se metió y va directo ahí.
-    public void InvestigateHideout(Vector3 hideoutPosition)
+    // Llamado por HideOut cuando el jugador se esconde estando demasiado cerca del enemigo:
+    // en vez de perder el rastro o pasar a Searching/Confused, sigue directo hacia el escondite
+    // (ignorando si lo ve o no) y, al llegar, ejecuta onArrived (ej. sacarlo a la fuerza) antes
+    // de retomar la persecución normal.
+    public void ForceApproach(Vector3 target, System.Action onArrived)
     {
-        lastKnownPlayerPosition = hideoutPosition;
-        EnterSearching(hideoutPosition);
+        state = EnemyState.ForceApproach;
+        forceApproachTarget = target;
+        onForceApproachArrived = onArrived;
+
+        enemyAgent.isStopped = false;
+        enemyAgent.updateRotation = true;
+        enemyAgent.speed = EffectiveBaseSpeed * chaseMultiplier;
+        enemyAgent.SetDestination(target);
+
+        StartChaseTracking();
+    }
+
+    void UpdateForceApproach()
+    {
+        EnemyLight.color = EngageColor;
+
+        float distance = Vector3.Distance(transform.position, forceApproachTarget);
+        if (distance <= forceApproachArrivalDistance)
+        {
+            System.Action callback = onForceApproachArrived;
+            onForceApproachArrived = null;
+            callback?.Invoke();
+
+            EnterChasing();
+        }
     }
 
     void FollowPlayer()

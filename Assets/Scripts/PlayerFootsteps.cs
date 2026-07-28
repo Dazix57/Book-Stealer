@@ -8,14 +8,15 @@ public class PlayerFootsteps : FootstepEmitter
 
     // Volumen "natural" de los pasos al oído del jugador; es una elección de mezcla de audio y
     // no debe afectar qué tan lejos los oyen los enemigos (ver HearingLoudness más abajo).
-    [SerializeField] private float baseVolumeMultiplier = 0.7f;
+    [SerializeField] private float baseVolumeMultiplier = 0.6f;
 
     // Qué tan más flojos suenan los pasos (para el jugador) y qué tan lejos se pueden
     // oír (para los enemigos) mientras se está agachado. 1 = normal.
-    [SerializeField] private float crouchLoudnessMultiplier = 0.4f;
+    [SerializeField] private float crouchLoudnessMultiplier = 0.2f;
 
-    // posición del paso, "loudness" (1 = normal, menor mientras se está agachado)
-    public static event Action<Vector3, float> FootstepHeard;
+    // posición del paso, "loudness" (1 = normal, menor mientras se está agachado), si se oyó
+    // mientras el jugador sprintaba (el enemigo que lo oiga entra en Search directo, sin roll)
+    public static event Action<Vector3, float, bool> FootstepHeard;
 
     protected override void Awake()
     {
@@ -42,6 +43,6 @@ public class PlayerFootsteps : FootstepEmitter
 
     protected override void OnFootstep(float speed)
     {
-        FootstepHeard?.Invoke(transform.position, HearingLoudness);
+        FootstepHeard?.Invoke(transform.position, HearingLoudness, playerHandler.IsSprinting);
     }
 }

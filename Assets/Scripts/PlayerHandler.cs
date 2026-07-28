@@ -110,19 +110,21 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private Color healthLowColor = new Color(0.35f, 0f, 0f);
 
     // Sneak meter setup
-    [SerializeField] private float sneakMultiplierBase = 0.5f;
-    [SerializeField] private float sneakDrainRate = 0.05f;
-    [SerializeField] private float sneakRegenRate = 0.025f;
+    [SerializeField] private float sneakMultiplierBase = 0.4f;
+    [SerializeField] private float sneakDrainRate = 0.03f;
+    [SerializeField] private float sneakRegenRate = 0.015f;
     [SerializeField] private float sneakSpeedMultiplier = 0.5f; // Velocidad mientras se está sneakeando, fijo sin importar cuánto se haya usado
     private float sneakMeter;
-    private bool sneakExhausted = false; // true tras agotar el medidor; obliga a soltar la tecla antes de volver a sneakear
     private bool isSprinting = false;
 
     // Sprint / stamina setup
-    [SerializeField] private float sprintStaminaDuration = 5f; // segundos de sprint continuo hasta vaciar el medidor
-    [SerializeField] private float staminaRegenRate = 0.2f; // fracción del medidor por segundo mientras no se está corriendo
+    [SerializeField] private float sprintStaminaDuration = 2f; // segundos de sprint continuo hasta vaciar el medidor
+    [SerializeField] private float staminaRegenRate = 0.05f; // fracción del medidor por segundo mientras no se está corriendo
+    [SerializeField] private float movingStaminaRegenMultiplier = 0.5f; // la regen se reduce a esta fracción mientras el jugador se mueve
+    [SerializeField] private float staminaDepletionCooldown = 5f; // tras vaciarse del todo, no regenera nada durante este tiempo
     [SerializeField] private UnityEngine.UI.Image staminaBar; // barra vertical rellenable sobre el texto del parry
     private float staminaMeter = 1f; // 1 = lleno, 0 = vacío
+    private float staminaRegenCooldownTimer = 0f;
 
     // Referencia al collider que puso inObjectiveArea en true, para poder resetearlo
     // al salir aunque su hijo 'Mark' ya no exista (ej. si el área se completó
@@ -165,6 +167,17 @@ public class PlayerHandler : MonoBehaviour
 
     // Consultado por PlayerFootsteps para atenuar el volumen y el alcance auditivo de los pasos
     public bool Crouching => IsCrouching;
+
+    // Consultado por PlayerFootsteps: si suena mientras esto es true, el enemigo que lo oiga
+    // entra en Search directamente, sin el roll de probabilidad normal.
+    public bool IsSprinting => isSprinting && !IsCrouching && !isParryActive;
+
+    // Consultado por sistemas externos que necesitan infligir daño directo al jugador
+    // (ej. el anti-cheese de HideOut por quedarse escondido demasiado tiempo).
+    public void ApplyDamage(float amount)
+    {
+        TakeDamage(amount);
+    }
 
     private void OnEnable()
     {
@@ -235,6 +248,7 @@ public class PlayerHandler : MonoBehaviour
         // Set up keybinds
         parryKey = Key.F;
         crouchKey = Key.LeftCtrl;
+        sprintKey = Key.LeftShift;
 
         // Health setup
         currentHealth = maxHealth;
@@ -468,17 +482,11 @@ public class PlayerHandler : MonoBehaviour
         // -- Detect crouch input
         bool crouchKeyHeld = Keyboard.current[crouchKey].isPressed;
 
-        if (!crouchKeyHeld)
-        {
-            // Hay que soltar la tecla antes de poder volver a sneakear tras agotar el medidor
-            sneakExhausted = false;
-        }
-
         // -- Detect sprint input (no se puede iniciar sin stamina disponible)
         isSprinting = Keyboard.current[sprintKey].isPressed && staminaMeter > 0f;
 
-        // No se puede sneakear si el medidor ya se agotó, ni mientras se está escondido o parriando
-        IsCrouching = crouchKeyHeld && !sneakExhausted && !isHidden && !isParryActive;
+        // No se puede sneakear mientras se está escondido o parriando
+        IsCrouching = crouchKeyHeld && !isHidden && !isParryActive;
 
         // Revisa que el jugador pueda visualizar el marcador
         if (Keyboard.current[objectiveMark].wasPressedThisFrame && !markerCooldown.Running)
@@ -551,18 +559,13 @@ public class PlayerHandler : MonoBehaviour
         }
     }
 
+    // Al agotarse (sneakMeter llega a 1) ya no se fuerza la salida del sneak: el jugador se
+    // queda agachado sin bonus de sigilo (SneakFOVMultiplier vuelve a 1) hasta que suelte la tecla.
     private void UpdateSneakMeter()
     {
         if (IsCrouching)
         {
             sneakMeter = Mathf.Min(1f, sneakMeter + sneakDrainRate * Time.deltaTime);
-
-            if (sneakMeter >= 1f)
-            {
-                // Medidor agotado: se fuerza la salida del sneak (el multiplicador vuelve a 1)
-                sneakExhausted = true;
-                IsCrouching = false;
-            }
         }
         else
         {
@@ -572,7 +575,8 @@ public class PlayerHandler : MonoBehaviour
 
     // Drena el medidor de stamina mientras se corre de verdad (no cuenta si el
     // sprint no se está aplicando, ej. agachado o parriando); lo regenera el
-    // resto del tiempo. Corta el sprint en cuanto se vacía.
+    // resto del tiempo, a mitad de ritmo mientras el jugador se mueve. Corta el
+    // sprint en cuanto se vacía y bloquea la regen durante staminaDepletionCooldown.
     private void UpdateStamina()
     {
         bool effectivelySprinting = isSprinting && !IsCrouching && !isParryActive;
@@ -584,11 +588,18 @@ public class PlayerHandler : MonoBehaviour
             if (staminaMeter <= 0f)
             {
                 isSprinting = false;
+                staminaRegenCooldownTimer = staminaDepletionCooldown;
             }
+        }
+        else if (staminaRegenCooldownTimer > 0f)
+        {
+            staminaRegenCooldownTimer -= Time.deltaTime;
         }
         else
         {
-            staminaMeter = Mathf.Min(1f, staminaMeter + staminaRegenRate * Time.deltaTime);
+            bool isMoving = inputDirection.sqrMagnitude > 0.0001f;
+            float regenRate = staminaRegenRate * (isMoving ? movingStaminaRegenMultiplier : 1f);
+            staminaMeter = Mathf.Min(1f, staminaMeter + regenRate * Time.deltaTime);
         }
 
         if (staminaBar != null)

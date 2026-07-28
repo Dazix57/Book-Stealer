@@ -13,7 +13,7 @@ public abstract class FootstepEmitter : MonoBehaviour
     [Header("Spatial audio")]
     [SerializeField] private AudioSource audioSource; // local a este GameObject, no el AudioSource compartido de AudioManager
     [SerializeField] private float minDistance = 1f; // distancia dentro de la cual se oye a volumen máximo
-    [SerializeField] private float maxDistance = 15f; // distancia a partir de la cual deja de oírse
+    [SerializeField] private float maxDistance = 35f; // distancia a partir de la cual deja de oírse
 
     private float stepTimer;
 
