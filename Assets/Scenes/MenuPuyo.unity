@@ -236,7 +236,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1732050807568877293, guid: fe2b1a7421f16234e8b5403f33045e85, type: 3}
       propertyPath: gameSceneName
-      value: Nivel_Puyo
+      value: Nivel_JCC
       objectReference: {fileID: 0}
     - target: {fileID: 4966239483491740368, guid: fe2b1a7421f16234e8b5403f33045e85, type: 3}
       propertyPath: m_IsActive
