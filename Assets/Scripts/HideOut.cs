@@ -30,6 +30,7 @@ public class HideOut : MonoBehaviour
     private bool inRange = false;
     private bool isHidden = false;
     private GameObject player;
+    private PlayerHandler playerHandler;
 
     private Vector3 originalPos;
     private Quaternion originalRot;
@@ -43,6 +44,9 @@ public class HideOut : MonoBehaviour
     }
     void Update()
     {
+        // No se puede entrar ni salir de un escondite mientras se está parriando
+        if (playerHandler != null && playerHandler.IsParryActive) return;
+
         if (inRange && Keyboard.current.eKey.wasPressedThisFrame)
         {
             if (isHidden)
@@ -61,6 +65,7 @@ public class HideOut : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             player = other.gameObject;
+            playerHandler = player.GetComponent<PlayerHandler>();
 
             // El texto se decide aquí, con el valor real de isHidden en el momento
             // en que el panel se vuelve a mostrar (no cuando se presionó E, ya que
@@ -105,6 +110,7 @@ public class HideOut : MonoBehaviour
         originalPos = player.transform.position;
         originalRot = player.transform.rotation;
         isHidden = true;
+        if (playerHandler != null) playerHandler.IsHidden = true;
 
         if (hideRoutine != null)
         {
@@ -156,7 +162,6 @@ public class HideOut : MonoBehaviour
     IEnumerator TransitionRoutine(Vector3 startPos, Quaternion startRot, Vector3 endPos, Quaternion endRot, bool hidingIntoSpot)
     {
         Rigidbody rb = player.GetComponent<Rigidbody>();
-        PlayerHandler playerHandler = player.GetComponent<PlayerHandler>();
 
         // Durante la animación no se puede caminar ni rotar la cámara
         if (playerHandler != null)
@@ -198,6 +203,7 @@ public class HideOut : MonoBehaviour
             {
                 playerHandler.CanMove = true;
                 playerHandler.CanRotate = true;
+                playerHandler.IsHidden = false;
             }
             isHidden = false;
         }

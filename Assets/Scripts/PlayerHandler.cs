@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections; // <-- This is the missing line required for IEnumerator
 using System.Collections.Generic; // Required if you are using IEnumerator<T>
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using Unity.VisualScripting;
 using Unity.Mathematics;
 using TMPro;
@@ -25,10 +26,8 @@ public class PlayerHandler : MonoBehaviour
     private float pitch; // Rotación acumulada en el eje X (vertical), aplicada solo a la cámara
 
     [SerializeField]
-    private float maxLookDownAngle = 40f; // Límite de inclinación hacia abajo; no se permite mirar por encima del forward
+    private float maxLookDownAngle = 40f; // Límite de inclinación, tanto hacia abajo como hacia arriba
 
-    [SerializeField]
-    private bool IsParrying;
     [SerializeField]
     private bool IsCrouching;
 
@@ -38,6 +37,11 @@ public class PlayerHandler : MonoBehaviour
     private bool canRotate = true;
     private bool inObjectiveArea = false;
 
+    // Se pone en true externamente (ej. HideOut) mientras el jugador está escondido;
+    // bloquea el sneak y el parry mientras esté activo.
+    [SerializeField]
+    private bool isHidden = false;
+
     [SerializeField]
     private float PushForce;
 
@@ -46,9 +50,23 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private Key pickUpKey;
     [SerializeField] private Key objectiveMark;
 
-    // Parry setup
+    // Parry setup: es una habilidad puntual (se activa al pulsar F), no un estado mientras se mantiene
+    [SerializeField] private bool isParryActive = false;
+    [SerializeField] private float parryDuration = 1f; // Ventana en la que el parry puede conectar
+    [SerializeField] private float parrySpeed = 1.5f; // Velocidad de movimiento mientras se para (valor absoluto, no multiplicador)
+    private float parryTimer = 0f;
     private float ParryDebounce = 0.0f;
-    private float ParryCD = 5.0f;
+    private float ParryCD = 20.0f; // Cooldown tras terminar el parry (conecte o no)
+
+    private Light playerLight; // obtenido en Awake() vía GetComponent
+    [SerializeField] private float parryLightRangeMultiplier = 0.3f;
+    [SerializeField] private float parryLightIntensityMultiplier = 0.3f;
+    private float originalLightRange;
+    private float originalLightIntensity;
+    private Color originalLightColor;
+
+    [SerializeField] private TextMeshProUGUI parryLabel;
+    private Color parryLabelOriginalColor;
 
     // Health setup
     [SerializeField] private float maxHealth = 100f;
@@ -56,11 +74,19 @@ public class PlayerHandler : MonoBehaviour
     private float currentHealth;
     private bool isDead;
 
+    // Efectos visuales de salud: viñetas (más visibles cuanto menos vida) y
+    // tinte del RawImage (blanco a 100 HP, rojo oscuro a 0 HP)
+    [SerializeField] private UnityEngine.UI.Image[] healthVignettes;
+    [SerializeField] private UnityEngine.UI.RawImage healthRawImage;
+    [SerializeField] private Color healthLowColor = new Color(0.35f, 0f, 0f);
+
     // Sneak meter setup
     [SerializeField] private float sneakMultiplierBase = 0.5f;
     [SerializeField] private float sneakDrainRate = 0.1f;
     [SerializeField] private float sneakRegenRate = 0.05f;
+    [SerializeField] private float sneakSpeedMultiplier = 0.5f; // Velocidad mientras se está sneakeando, fijo sin importar cuánto se haya usado
     private float sneakMeter;
+    private bool sneakExhausted = false; // true tras agotar el medidor; obliga a soltar la tecla antes de volver a sneakear
 
     // Referencia al collider que puso inObjectiveArea en true, para poder resetearlo
     // al salir aunque su hijo 'Mark' ya no exista (ej. si el área se completó
@@ -83,6 +109,16 @@ public class PlayerHandler : MonoBehaviour
     // Only applies the sneak bonus while actively crouching; otherwise enemies see at full FOV.
     public float SneakFOVMultiplier => IsCrouching ? sneakMeter : 1f;
 
+    // Consultado por HideOut para bloquear el parry mientras el jugador está escondido
+    public bool IsHidden
+    {
+        get { return isHidden; }
+        set { isHidden = value; }
+    }
+
+    // Consultado por HideOut para bloquear el hide mientras se está parriando
+    public bool IsParryActive => isParryActive;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -104,8 +140,21 @@ public class PlayerHandler : MonoBehaviour
         cameraTransform = Camera.main.transform;
 
         yaw = transform.eulerAngles.y;
-        IsParrying = false;
         IsCrouching = false;
+
+        // Luz del jugador: está en la cámara (hija), no en este GameObject
+        playerLight = GetComponentInChildren<Light>();
+        if (playerLight != null)
+        {
+            originalLightRange = playerLight.range;
+            originalLightIntensity = playerLight.intensity;
+            originalLightColor = playerLight.color;
+        }
+
+        if (parryLabel != null)
+        {
+            parryLabelOriginalColor = parryLabel.color;
+        }
 
         // Oculta y bloquea el cursor en el centro de la pantalla
         Cursor.lockState = CursorLockMode.Locked;
@@ -119,6 +168,7 @@ public class PlayerHandler : MonoBehaviour
         currentHealth = maxHealth;
         isDead = false;
         EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
+        UpdateHealthVisuals();
 
         // Sneak meter setup
         sneakMeter = sneakMultiplierBase;
@@ -149,6 +199,8 @@ public class PlayerHandler : MonoBehaviour
         }
 
         UpdateSneakMeter();
+        UpdateParry();
+        UpdateParryLabel();
 
         // revisa si puede enseñar el marcador del objetivo
         EnableObjectiveMark();
@@ -162,37 +214,101 @@ public class PlayerHandler : MonoBehaviour
 
     private void OnTriggerStay(Collider collision)
     {
-        if (collision.CompareTag("Enemy"))
+        if (!collision.CompareTag("Enemy")) return;
+
+        if (isParryActive)
         {
-            if (IsParrying == true && Time.time >= ParryDebounce)
-            {
-                ParryDebounce = Time.time + ParryCD;
-                EnemyController Enemy_Controller = collision.GetComponent<EnemyController>();
-                StartCoroutine(CooldownRoutine());
-                if (Enemy_Controller == null) return;
+            EnemyController Enemy_Controller = collision.GetComponent<EnemyController>();
+            if (Enemy_Controller == null) return;
 
-                Vector3 pushDirection = collision.transform.position - transform.position;
-                pushDirection.y = 0; // Keep the push flat on the ground if needed
-                pushDirection.Normalize();
+            Vector3 pushDirection = collision.transform.position - transform.position;
+            pushDirection.y = 0; // Keep the push flat on the ground if needed
+            pushDirection.Normalize();
 
-                Debug.Log("Parried monster...");
-                // Aturde al enemigo y lo aleja; retomará la búsqueda cuando pase el aturdimiento
-                Enemy_Controller.Parry(pushDirection);
-            } else
-            {
-                TakeDamage(damagePerSecond * Time.fixedDeltaTime);
-            }
+            Debug.Log("Parried monster...");
+            // Aturde al enemigo y lo aleja; retomará la búsqueda cuando pase el aturdimiento
+            Enemy_Controller.Parry(pushDirection);
 
+            // El parry conectó: termina de inmediato en vez de esperar a que se acabe la ventana
+            EndParry();
         }
-        
-        // Example: Check if hitting an enemy using tags
-        //if (collision.gameObject.CompareTag("Enemy"))
-        //{
-            // Handle damage or impact behavior
-        //}
+        else
+        {
+            TakeDamage(damagePerSecond * Time.fixedDeltaTime);
+        }
+    }
+
+    // Intenta activar la habilidad de parry al pulsar la tecla; no hace nada si ya
+    // está activa, en cooldown, o si el jugador está escondido.
+    private void TryStartParry()
+    {
+        if (isParryActive) return;
+        if (Time.time < ParryDebounce) return;
+        if (IsHidden) return;
+
+        isParryActive = true;
+        parryTimer = parryDuration;
+
+        // Corta cualquier sneak en curso: no se puede sneakear mientras se para
+        IsCrouching = false;
+
+        if (playerLight != null)
+        {
+            playerLight.range = originalLightRange * parryLightRangeMultiplier;
+            playerLight.intensity = originalLightIntensity * parryLightIntensityMultiplier;
+            playerLight.color = Color.white;
+        }
+    }
+
+    private void UpdateParry()
+    {
+        if (!isParryActive) return;
+
+        parryTimer -= Time.deltaTime;
+        if (parryTimer <= 0f)
+        {
+            EndParry();
+        }
+    }
+
+    // Termina la ventana de parry (haya conectado o no) y empieza el cooldown
+    private void EndParry()
+    {
+        isParryActive = false;
+        ParryDebounce = Time.time + ParryCD;
+
+        if (playerLight != null)
+        {
+            playerLight.range = originalLightRange;
+            playerLight.intensity = originalLightIntensity;
+            playerLight.color = originalLightColor;
+        }
     }
 
     
+
+    private void UpdateParryLabel()
+    {
+        if (parryLabel == null) return;
+
+        if (isParryActive)
+        {
+            parryLabel.text = "[PARRYING]";
+            parryLabel.color = Color.red;
+            return;
+        }
+
+        float remainingCooldown = ParryDebounce - Time.time;
+        if (remainingCooldown > 0f)
+        {
+            parryLabel.text = $"[PARRY]: {Mathf.CeilToInt(remainingCooldown)}s";
+        }
+        else
+        {
+            parryLabel.text = "[PARRY]: Ready";
+        }
+        parryLabel.color = parryLabelOriginalColor;
+    }
 
     private void ReadInput()
     {
@@ -218,25 +334,23 @@ public class PlayerHandler : MonoBehaviour
             inputDirection += Vector3.right;
         }
 
-        // -- Detect parry input
-        if (Keyboard.current[parryKey].isPressed)
+        // -- Detect parry input (activación puntual al pulsar, no mientras se mantiene)
+        if (Keyboard.current[parryKey].wasPressedThisFrame)
         {
-            IsParrying = true;
-            //Debug.Log("parrying");
-        } else
-        {
-            IsParrying = false;
+            TryStartParry();
         }
 
         // -- Detect crouch input
-        if (Keyboard.current[crouchKey].isPressed)
+        bool crouchKeyHeld = Keyboard.current[crouchKey].isPressed;
+
+        if (!crouchKeyHeld)
         {
-            IsCrouching = true;
-            
-        } else
-        {
-            IsCrouching = false;
+            // Hay que soltar la tecla antes de poder volver a sneakear tras agotar el medidor
+            sneakExhausted = false;
         }
+
+        // No se puede sneakear si el medidor ya se agotó, ni mientras se está escondido o parriando
+        IsCrouching = crouchKeyHeld && !sneakExhausted && !isHidden && !isParryActive;
 
         // Revisa que el jugador pueda visualizar el marcador
         if (Keyboard.current[objectiveMark].wasPressedThisFrame && !markerCooldown.Running)
@@ -258,6 +372,7 @@ public class PlayerHandler : MonoBehaviour
 
         currentHealth = Mathf.Clamp(currentHealth - amount, 0f, maxHealth);
         EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
+        UpdateHealthVisuals();
 
         if (currentHealth <= 0f)
         {
@@ -266,11 +381,45 @@ public class PlayerHandler : MonoBehaviour
         }
     }
 
+    // Viñetas: invisibles a 100 HP, totalmente visibles a 0 HP (lineal).
+    // RawImage: blanco a 100 HP, vira a healthLowColor a 0 HP (lineal).
+    private void UpdateHealthVisuals()
+    {
+        float healthFraction = maxHealth > 0f ? Mathf.Clamp01(currentHealth / maxHealth) : 0f;
+        float vignetteAlpha = 1f - healthFraction;
+
+        if (healthVignettes != null)
+        {
+            foreach (UnityEngine.UI.Image vignette in healthVignettes)
+            {
+                if (vignette == null) continue;
+
+                Color vignetteColor = vignette.color;
+                vignetteColor.a = vignetteAlpha;
+                vignette.color = vignetteColor;
+            }
+        }
+
+        if (healthRawImage != null)
+        {
+            Color tint = Color.Lerp(healthLowColor, Color.white, healthFraction);
+            tint.a = healthRawImage.color.a;
+            healthRawImage.color = tint;
+        }
+    }
+
     private void UpdateSneakMeter()
     {
         if (IsCrouching)
         {
             sneakMeter = Mathf.Min(1f, sneakMeter + sneakDrainRate * Time.deltaTime);
+
+            if (sneakMeter >= 1f)
+            {
+                // Medidor agotado: se fuerza la salida del sneak (el multiplicador vuelve a 1)
+                sneakExhausted = true;
+                IsCrouching = false;
+            }
         }
         else
         {
@@ -284,8 +433,8 @@ public class PlayerHandler : MonoBehaviour
         Quaternion targetRotation = Quaternion.Euler(0f, yaw, 0f);
         rb.MoveRotation(targetRotation);
 
-        // Pitch de la cámara: solo hacia abajo, nunca por encima del forward (0).
-        pitch = Mathf.Clamp(pitch - mouseY, 0f, maxLookDownAngle);
+        // Pitch de la cámara: sube y baja el mismo ángulo máximo en ambas direcciones.
+        pitch = Mathf.Clamp(pitch - mouseY, -maxLookDownAngle, maxLookDownAngle);
         cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
@@ -299,19 +448,19 @@ public class PlayerHandler : MonoBehaviour
 
     private void MoveRigidbody()
     {
-        Vector3 velocity = (transform.forward * inputDirection.z + transform.right * inputDirection.x) * speed;
+        float currentSpeed = speed;
+        if (isParryActive)
+        {
+            currentSpeed = parrySpeed;
+        }
+        else if (IsCrouching)
+        {
+            currentSpeed = speed * sneakSpeedMultiplier;
+        }
+
+        Vector3 velocity = (transform.forward * inputDirection.z + transform.right * inputDirection.x) * currentSpeed;
         rb.AddForce(velocity*rb.linearDamping); //*Time.fixedDeltaTime);
         //rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-    }
-    
-    IEnumerator CooldownRoutine()
-    {
-
-
-        // Pause execution for the specified duration
-        yield return new WaitForSeconds(ParryCD);
-
-        Debug.Log("Parry Ready Again!");
     }
 
     void OnTriggerEnter(Collider other)
