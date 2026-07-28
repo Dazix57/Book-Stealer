@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -22,37 +23,45 @@ public class EnemyController : MonoBehaviour
     private float viewDistance;
     [SerializeField]
     private Transform[] points;
+    [SerializeField]
+    private float patrolPauseMinDuration = 0.5f; // Espera al llegar a un punto antes de ir al siguiente
+    [SerializeField]
+    private float patrolPauseMaxDuration = 5f;
 
     // Si el jugador está dentro de este rango, el enemigo nunca lo pierde de vista
     // (evita falsos negativos del raycast/FOV cuando el jugador está pegado al enemigo)
     [SerializeField]
-    private float closeRangeDistance = 10f;
+    private float closeRangeDistance = 15f;
 
     // Windup: gira hacia el jugador antes de empezar la persecución
     [SerializeField]
-    private float windupDuration = 0.25f;
+    private float windupDuration = 0.5f;
     [SerializeField]
     private float windupTurnSpeed = 720f; // grados por segundo
 
     // Searching: intenta predecir hacia donde se fue el jugador
     [SerializeField]
-    private float searchMinDuration = 1f;
+    private float searchMinDuration = 2.5f;
     [SerializeField]
-    private float searchMaxDuration = 2f;
+    private float searchMaxDuration = 4f;
     [SerializeField]
-    private float searchProjectionDistance = 25f;
+    private float searchProjectionDistance = 30f;
 
     // Confused: mira en direcciones aleatorias buscando al jugador
     [SerializeField]
-    private float confusedDuration = 1f;
+    private float confusedDuration = 2.8f;
     [SerializeField]
-    private float confusedSnapInterval = 0.2f;
+    private float confusedSnapInterval = 0.4f;
 
-    // Stunned: aturdido tras ser parriado por el jugador
+    // Stunned: aturdido tras ser parriado por el jugado r
     [SerializeField]
     private float stunDuration = 5f;
     [SerializeField]
     private float stunKnockbackDistance = 5f;
+    [SerializeField]
+    private float stunKnockbackDuration = 0.3f; // Duración del empujón suave (no es un teletransporte)
+    [SerializeField]
+    private float stunColorTransitionDuration = 0.5f; // Duración del fundido de luz al entrar/salir del aturdimiento
     [SerializeField]
     [Range(0f, 1f)]
     private float stunSearchResetChance = 0.1f; // Probabilidad de reiniciar la persecución al patrullaje en vez de buscar
@@ -67,14 +76,22 @@ public class EnemyController : MonoBehaviour
     private float baseSpeed;
     private Vector3 lastKnownPlayerPosition;
     private Vector3 playerMoveDirection;
+    private float stateDurationTotal;
+    private Coroutine knockbackRoutine;
 
     // Atributos de patrullaje
     private int destPoint;
     private int repeatCount;
+    private bool isPatrolPaused;
+    private float patrolPauseTimer;
 
     private Light EnemyLight;
     private Color InitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
     private Color EngageColor = Color.red;
+    private Color SearchColor = Color.gray; // Color al que se apaga la luz durante Searching
+    private Color ConfusedColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color al que vira la luz durante Confused
+    private Color windupStartColor; // Color de luz al entrar en Windup (varía según de dónde venga)
+    private Color stunStartColor; // Color de luz al entrar en Stunned (varía según de dónde venga)
 
     // Estado público (consultado por otros scripts, ej. HideOut)
     public bool InChase
@@ -115,7 +132,7 @@ public class EnemyController : MonoBehaviour
 
         // Set values
 
-        viewDistance = 15f;
+        viewDistance = 11f;
         fieldOfView = 75.0f;
         chaseMultiplier = 2.25f;
 
@@ -211,6 +228,7 @@ public class EnemyController : MonoBehaviour
     {
         state = EnemyState.Windup;
         stateTimer = windupDuration;
+        windupStartColor = EnemyLight.color;
 
         enemyAgent.isStopped = true;
         enemyAgent.velocity = Vector3.zero;
@@ -219,7 +237,9 @@ public class EnemyController : MonoBehaviour
 
     void UpdateWindup()
     {
-        EnemyLight.color = EngageColor;
+        // La luz vira gradualmente hacia rojo, partiendo del color que tuviera al entrar
+        float colorProgress = windupDuration > 0f ? Mathf.Clamp01(1f - stateTimer / windupDuration) : 1f;
+        EnemyLight.color = Color.Lerp(windupStartColor, EngageColor, colorProgress);
 
         // Gira hacia el jugador
         Vector3 toPlayer = player.transform.position - transform.position;
@@ -230,10 +250,11 @@ public class EnemyController : MonoBehaviour
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, windupTurnSpeed * Time.deltaTime);
         }
 
-        // Si el jugador sale de la vista antes de terminar el windup, se cancela la persecución
+        // Si el jugador sale de la vista antes de terminar el windup, pasa a Confused
+        // directamente (con la mitad de duración, ya que apenas lo perdió de vista)
         if (!CanSeePlayerWhileEngaged(viewDistance, fieldOfView, out _))
         {
-            EnterPatrol();
+            EnterConfused(confusedDuration * 0.5f);
             return;
         }
 
@@ -293,6 +314,7 @@ public class EnemyController : MonoBehaviour
     {
         state = EnemyState.Searching;
         stateTimer = Random.Range(searchMinDuration, searchMaxDuration);
+        stateDurationTotal = stateTimer;
 
         enemyAgent.isStopped = false;
         enemyAgent.updateRotation = true;
@@ -301,16 +323,19 @@ public class EnemyController : MonoBehaviour
 
     void UpdateSearching()
     {
-        EnemyLight.color = EngageColor;
-
         float alertViewDistance = viewDistance * chaseMultiplier;
 
         if (CanSeePlayerWhileEngaged(alertViewDistance, fieldOfView, out Vector3 seenPosition))
         {
+            EnemyLight.color = EngageColor;
             EnterChasing();
             lastKnownPlayerPosition = seenPosition;
             return;
         }
+
+        // La luz se apaga lentamente hacia gris a medida que se pierde la esperanza de encontrar al jugador
+        float colorProgress = stateDurationTotal > 0f ? Mathf.Clamp01(1f - stateTimer / stateDurationTotal) : 1f;
+        EnemyLight.color = Color.Lerp(EngageColor, SearchColor, colorProgress);
 
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
@@ -321,8 +346,14 @@ public class EnemyController : MonoBehaviour
 
     void EnterConfused()
     {
+        EnterConfused(confusedDuration);
+    }
+
+    void EnterConfused(float duration)
+    {
         state = EnemyState.Confused;
-        stateTimer = confusedDuration;
+        stateTimer = duration;
+        stateDurationTotal = stateTimer;
         confusedSnapTimer = 0f;
 
         enemyAgent.isStopped = true;
@@ -332,8 +363,7 @@ public class EnemyController : MonoBehaviour
 
     void UpdateConfused()
     {
-        EnemyLight.color = EngageColor;
-
+        
         float alertViewDistance = viewDistance * chaseMultiplier;
 
         confusedSnapTimer -= Time.deltaTime;
@@ -342,15 +372,21 @@ public class EnemyController : MonoBehaviour
             // Gira (casi instantáneamente) hacia una dirección aleatoria buscando al jugador
             float randomYaw = Random.Range(0f, 360f);
             transform.rotation = Quaternion.Euler(0f, randomYaw, 0f);
-            confusedSnapTimer = confusedSnapInterval;
+            
+            confusedSnapTimer = Random.Range(confusedSnapInterval,1.2f);
         }
 
         if (CanSeePlayerWhileEngaged(alertViewDistance, fieldOfView, out Vector3 seenPosition))
         {
-            EnterChasing();
+            // El windup se encarga de virar la luz rápidamente a rojo
             lastKnownPlayerPosition = seenPosition;
+            EnterWindup();
             return;
         }
+
+        // La luz pasa de gris a azul mientras el enemigo sigue confundido
+        float colorProgress = stateDurationTotal > 0f ? Mathf.Clamp01(1f - stateTimer / stateDurationTotal) : 1f;
+        EnemyLight.color = Color.Lerp(SearchColor, ConfusedColor, colorProgress);
 
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
@@ -362,6 +398,7 @@ public class EnemyController : MonoBehaviour
     void EnterPatrol()
     {
         state = EnemyState.Patrolling;
+        isPatrolPaused = false;
 
         enemyAgent.isStopped = false;
         enemyAgent.updateRotation = true;
@@ -378,10 +415,17 @@ public class EnemyController : MonoBehaviour
     {
         state = EnemyState.Stunned;
         stateTimer = stunDuration;
+        stunStartColor = EnemyLight.color;
 
         enemyAgent.isStopped = true;
         enemyAgent.velocity = Vector3.zero;
         enemyAgent.updateRotation = false;
+
+        if (knockbackRoutine != null)
+        {
+            StopCoroutine(knockbackRoutine);
+            knockbackRoutine = null;
+        }
 
         knockbackDirection.y = 0f;
         if (knockbackDirection.sqrMagnitude > 0.0001f)
@@ -389,14 +433,56 @@ public class EnemyController : MonoBehaviour
             Vector3 knockbackTarget = transform.position + knockbackDirection.normalized * stunKnockbackDistance;
             if (NavMesh.SamplePosition(knockbackTarget, out NavMeshHit hit, stunKnockbackDistance, NavMesh.AllAreas))
             {
-                enemyAgent.Warp(hit.position);
+                knockbackRoutine = StartCoroutine(KnockbackRoutine(hit.position));
             }
         }
     }
 
+    // Empuja al enemigo suavemente hacia targetPosition (sin teletransportarlo),
+    // desacelerando hacia el final para que se sienta como un empujón.
+    IEnumerator KnockbackRoutine(Vector3 targetPosition)
+    {
+        Vector3 startPosition = transform.position;
+        float elapsed = 0f;
+
+        while (elapsed < stunKnockbackDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / stunKnockbackDuration);
+            float eased = 1f - (1f - t) * (1f - t); // ease-out cuadrático
+
+            Vector3 desiredPosition = Vector3.Lerp(startPosition, targetPosition, eased);
+            enemyAgent.Move(desiredPosition - transform.position);
+
+            yield return null;
+        }
+
+        knockbackRoutine = null;
+    }
+
     void UpdateStunned()
     {
-        EnemyLight.color = EngageColor;
+        // La luz funde a negro al entrar y funde de vuelta a rojo al salir,
+        // sin solaparse aunque el aturdimiento dure poco.
+        float transitionDuration = Mathf.Min(stunColorTransitionDuration, stunDuration * 0.5f);
+        float elapsed = stunDuration - stateTimer;
+
+        if (transitionDuration <= 0f)
+        {
+            EnemyLight.color = Color.black;
+        }
+        else if (elapsed < transitionDuration)
+        {
+            EnemyLight.color = Color.Lerp(stunStartColor, Color.black, elapsed / transitionDuration);
+        }
+        else if (stateTimer < transitionDuration)
+        {
+            EnemyLight.color = Color.Lerp(Color.black, EngageColor, 1f - stateTimer / transitionDuration);
+        }
+        else
+        {
+            EnemyLight.color = Color.black;
+        }
 
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
@@ -472,11 +558,27 @@ public class EnemyController : MonoBehaviour
 
     void Patrol()
     {
+        // Ya llegó a un punto y está esperando antes de ir al siguiente
+        if (isPatrolPaused)
+        {
+            patrolPauseTimer -= Time.deltaTime;
+            if (patrolPauseTimer <= 0f)
+            {
+                isPatrolPaused = false;
+                enemyAgent.isStopped = false;
+                GotoNextPoint();
+            }
+            return;
+        }
+
         // Choose the next destination point when the agent gets
         // close to the current one.
-        if(!enemyAgent.pathPending && enemyAgent.remainingDistance < 0.5f)
+        if (!enemyAgent.pathPending && enemyAgent.remainingDistance < 0.5f)
         {
-            GotoNextPoint();
+            isPatrolPaused = true;
+            patrolPauseTimer = Random.Range(patrolPauseMinDuration, patrolPauseMaxDuration);
+            enemyAgent.isStopped = true;
+            enemyAgent.velocity = Vector3.zero;
         }
     }
 }
