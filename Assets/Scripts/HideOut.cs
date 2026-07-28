@@ -43,7 +43,7 @@ public class HideOut : MonoBehaviour
     }
     void Update()
     {
-        if (inRange && Keyboard.current.eKey.wasPressedThisFrame)
+        if (inRange && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             if (isHidden)
             {
@@ -65,7 +65,7 @@ public class HideOut : MonoBehaviour
             // El texto se decide aquí, con el valor real de isHidden en el momento
             // en que el panel se vuelve a mostrar (no cuando se presionó E, ya que
             // Unhide() no pone isHidden en false hasta que termina la animación).
-            promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = isHidden ? "Press E to exit" : "Press E to hide";
+            promptPanel.GetComponentInChildren<TextMeshProUGUI>().text = isHidden ? "Press [space] to exit" : "Press [space] to hide";
             promptPanel.SetActive(true);
             inRange = true;
         }

@@ -262,15 +262,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Movement
   speed: 5
+  sprintMultiplier: 0
   mouseSensitivity: 0.1
+  maxLookDownAngle: 40
   IsParrying: 0
   IsCrouching: 0
   canMove: 1
   canRotate: 1
   PushForce: 5000
-  crouchKey: 0
-  parryKey: 0
+  crouchKey: 17
+  parryKey: 20
   pickUpKey: 19
+  sprintKey: 51
   objectiveMark: 3
   maxHealth: 100
   damagePerSecond: 25

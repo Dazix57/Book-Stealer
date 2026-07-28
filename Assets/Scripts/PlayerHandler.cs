@@ -241,9 +241,9 @@ public class PlayerHandler : MonoBehaviour
             IsCrouching = false;
         }
 
-        if (Keyboard.current[sprintKey].IsPressed())
+        if (Keyboard.current[sprintKey].wasPressedThisFrame)
         {
-            speed += sprintMultiplier;
+            speed *= sprintMultiplier;
         }
         else if (Keyboard.current[sprintKey].wasReleasedThisFrame)
         {
