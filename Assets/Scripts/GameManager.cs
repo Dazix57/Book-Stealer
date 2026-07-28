@@ -6,23 +6,6 @@ public class GameManager : MonoBehaviour
 {
     private static readonly List<string> completedObjectiveAreas = new List<string>();
 
-    private void OnEnable()
-    {
-        EventManager.OnPlayerDeath += HandlePlayerDeath;
-    }
-
-    private void OnDisable()
-    {
-        EventManager.OnPlayerDeath -= HandlePlayerDeath;
-    }
-
-    private void HandlePlayerDeath()
-    {
-        Debug.Log("Restarting...");
-        
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
     /// <summary>
     /// Marca como completada un área de objetivos (identificada por el tag de su GameObject).
     /// Solo se guarda en memoria; no persiste entre sesiones de juego.

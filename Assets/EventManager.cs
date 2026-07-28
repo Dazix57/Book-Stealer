@@ -1,18 +1,19 @@
 using System;
+using UnityEngine;
 
 public static class EventManager
 {
     // Define your events using Action
-    public static event Action OnPlayerDeath;
+    public static event Action<Texture> OnPlayerDeath; // jumpscare del enemigo que mató al jugador
     public static event Action<int> OnScoreChanged; // Event with a parameter
     public static event Action<float, float> OnPlayerHealthChanged; // current, max
 
 
     // Trigger methods
-    public static void RaisePlayerDeath()
+    public static void RaisePlayerDeath(Texture jumpscareImage)
     {
         // The ?.Invoke() syntax safely checks if anyone is listening before firing
-        OnPlayerDeath?.Invoke();
+        OnPlayerDeath?.Invoke(jumpscareImage);
     }
 
     //public static void RaiseScoreChanged(int value)

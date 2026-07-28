@@ -79,6 +79,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  jumpscareImage: {fileID: 2800000, guid: 57e4d545e0c104146b66c5dd28674888, type: 3}
 --- !u!54 &2142685243935070240
 Rigidbody:
   m_ObjectHideFlags: 0

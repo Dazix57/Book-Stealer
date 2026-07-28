@@ -23,6 +23,11 @@ public class EnemyController : MonoBehaviour
     private float viewDistance;
     [SerializeField]
     private Transform[] points;
+
+    // Imagen estática mostrada a pantalla completa cuando este enemigo mata al jugador
+    [SerializeField]
+    private Texture jumpscareImage;
+
     [SerializeField]
     private float patrolPauseMinDuration = 0.5f; // Espera al llegar a un punto antes de ir al siguiente
     [SerializeField]
@@ -102,6 +107,12 @@ public class EnemyController : MonoBehaviour
     public bool IsStunned
     {
         get { return state == EnemyState.Stunned; }
+    }
+
+    // Consultado por PlayerHandler al morir, para saber qué jumpscare mostrar
+    public Texture JumpscareImage
+    {
+        get { return jumpscareImage; }
     }
 
     //private CapsuleCollider collider;
