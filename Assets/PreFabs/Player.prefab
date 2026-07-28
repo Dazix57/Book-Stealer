@@ -139,7 +139,6 @@ GameObject:
   - component: {fileID: 8772077658648397946}
   - component: {fileID: 9088842810424230274}
   - component: {fileID: 207809782675337947}
-  - component: {fileID: 1948276442470024936}
   - component: {fileID: 940629838810530442}
   - component: {fileID: 1830837519184470917}
   - component: {fileID: 7445287774919105722}
@@ -228,27 +227,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &1948276442470024936
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3414877654275047766}
-  m_Material: {fileID: 13400000, guid: c82e240b507c51c4983d918b6de48759, type: 2}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &940629838810530442
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,20 +241,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Movement
   speed: 5
   mouseSensitivity: 0.1
-  IsParrying: 0
+  maxLookDownAngle: 40
   IsCrouching: 0
   canMove: 1
   canRotate: 1
+  isHidden: 0
   PushForce: 5000
   crouchKey: 0
   parryKey: 0
   pickUpKey: 19
   objectiveMark: 3
+  isParryActive: 0
+  parryDuration: 1
+  parrySpeed: 1.5
+  parryLightRangeMultiplier: 0.3
+  parryLightIntensityMultiplier: 0.3
+  parryLabel: {fileID: 0}
   maxHealth: 100
   damagePerSecond: 25
+  healthVignettes: []
+  healthRawImage: {fileID: 0}
+  healthLowColor: {r: 0.35, g: 0, b: 0, a: 1}
   sneakMultiplierBase: 0.5
   sneakDrainRate: 0.1
   sneakRegenRate: 0.05
+  sneakSpeedMultiplier: 0.5
   coolDownDuration: 10
   coolDownMessagePreFab: {fileID: 900000001, guid: 12dd5e42f9344ab69a6d02a2ec3c282d, type: 3}
 --- !u!54 &1830837519184470917
