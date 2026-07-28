@@ -12595,7 +12595,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.70980394}
+  m_Color: {r: 0.3207547, g: 0.074136704, b: 0.074136704, a: 0.70980394}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -43325,7 +43325,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: You got killed
+  m_text: DEATH
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a9f997e2bfa8e4c78ad446cc16ecaf1c, type: 2}
   m_sharedMaterial: {fileID: -7860328635324068294, guid: a9f997e2bfa8e4c78ad446cc16ecaf1c, type: 2}
