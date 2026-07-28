@@ -10,5 +10,14 @@ public enum AudioClipName
     ButtonConfirmationSound,
     MenuTheme,
     GameplayTheme,
-    PickUpSound
+    PickUpSound,
+    BS_Ambience1,
+    BS_Ambience2,
+    BS_Ambience3,
+    BS_Ambience4,
+    BS_Ambience5,
+    BS_Chase,
+    BS_Damage,
+    PlayerFootstep,
+    EnemyFootstep,
 }

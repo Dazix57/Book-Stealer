@@ -4,7 +4,8 @@ public class InitializeGameplayAudio : MonoBehaviour
 {
     void Start()
     {
-        AudioManager.PlayMusic(AudioClipName.GameplayTheme, AudioChannel.Game);
+        AudioManager.ResetAmbience();
+        EnemyController.ResetChaseState();
     }
 
     void OnDestroy()

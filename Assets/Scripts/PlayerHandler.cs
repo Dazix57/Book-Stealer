@@ -68,14 +68,40 @@ public class PlayerHandler : MonoBehaviour
     private float originalLightIntensity;
     private Color originalLightColor;
 
+    // La luz se atenúa a la mitad mientras se está agachado. No se aplica mientras isParryActive,
+    // que ya controla la luz de forma exclusiva (y agacharse está bloqueado durante el parry).
+    [SerializeField] private float crouchLightMultiplier = 0.5f;
+
     [SerializeField] private TextMeshProUGUI parryLabel;
     private Color parryLabelOriginalColor;
+
+    // Posición base de la cámara (antes de aplicar el descenso al agacharse y el shake de persecución)
+    private Vector3 cameraDefaultLocalPosition;
+
+    [Header("Crouch camera")]
+    [SerializeField] private float crouchCameraYOffset = -0.3f; // cuánto baja la cámara al agacharse (metros, espacio local)
+    [SerializeField] private float crouchCameraLerpSpeed = 8f; // suavizado del descenso/subida de la cámara
+    private float crouchCameraOffsetCurrent = 0f;
+
+    // Camera shake mientras un enemigo está persiguiendo activamente al jugador (ver
+    // EnemyController.ChaseStarted/ChaseEnded, que comparten ciclo de vida con BS_Chase:
+    // empieza al iniciar la persecución, termina solo cuando todos los enemigos volvieron a patrullar).
+    [Header("Chase camera shake")]
+    [SerializeField] private float chaseShakeAmplitude = 0.03f; // metros, espacio local de la cámara
+    [SerializeField] private float chaseShakeFrequency = 25f; // velocidad del ruido (mientras más alto, más rápido tiembla)
+    private bool isBeingChased = false;
+    private Vector3 chaseShakeOffset = Vector3.zero;
 
     // Health setup
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float damagePerSecond = 75f;
     private float currentHealth;
     private bool isDead;
+
+    // El sonido de daño (BS_Damage) es un loop: se corta si no llega daño nuevo por este
+    // margen, ya que TakeDamage se llama en ticks de física discretos, no de forma continua.
+    [SerializeField] private float damageLoopStopDelay = 8f;
+    private float lastDamageTime = float.NegativeInfinity;
 
     // Efectos visuales de salud: viñetas (más visibles cuanto menos vida) y
     // tinte del RawImage (blanco a 100 HP, rojo oscuro a 0 HP)
@@ -85,8 +111,8 @@ public class PlayerHandler : MonoBehaviour
 
     // Sneak meter setup
     [SerializeField] private float sneakMultiplierBase = 0.5f;
-    [SerializeField] private float sneakDrainRate = 0.1f;
-    [SerializeField] private float sneakRegenRate = 0.05f;
+    [SerializeField] private float sneakDrainRate = 0.05f;
+    [SerializeField] private float sneakRegenRate = 0.025f;
     [SerializeField] private float sneakSpeedMultiplier = 0.5f; // Velocidad mientras se está sneakeando, fijo sin importar cuánto se haya usado
     private float sneakMeter;
     private bool sneakExhausted = false; // true tras agotar el medidor; obliga a soltar la tecla antes de volver a sneakear
@@ -137,6 +163,32 @@ public class PlayerHandler : MonoBehaviour
     // Consultado por HideOut para bloquear el hide mientras se está parriando
     public bool IsParryActive => isParryActive;
 
+    // Consultado por PlayerFootsteps para atenuar el volumen y el alcance auditivo de los pasos
+    public bool Crouching => IsCrouching;
+
+    private void OnEnable()
+    {
+        EnemyController.ChaseStarted += HandleChaseStarted;
+        EnemyController.ChaseEnded += HandleChaseEnded;
+    }
+
+    private void OnDisable()
+    {
+        EnemyController.ChaseStarted -= HandleChaseStarted;
+        EnemyController.ChaseEnded -= HandleChaseEnded;
+    }
+
+    private void HandleChaseStarted()
+    {
+        isBeingChased = true;
+    }
+
+    private void HandleChaseEnded()
+    {
+        isBeingChased = false;
+        chaseShakeOffset = Vector3.zero;
+    }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -156,12 +208,14 @@ public class PlayerHandler : MonoBehaviour
 
         // La cámara es hija del Player; el pitch se aplica solo a ella, no al Rigidbody
         cameraTransform = Camera.main.transform;
+        cameraDefaultLocalPosition = cameraTransform.localPosition;
 
         yaw = transform.eulerAngles.y;
         IsCrouching = false;
 
-        // Luz del jugador: está en la cámara (hija), no en este GameObject
-        playerLight = GetComponentInChildren<Light>();
+        // Luz del jugador: es hija de Camera.main, no de este GameObject (que puede no ser
+        // el padre de la cámara en la jerarquía), así que hay que buscarla desde ahí.
+        playerLight = cameraTransform.GetComponentInChildren<Light>();
         if (playerLight != null)
         {
             originalLightRange = playerLight.range;
@@ -228,6 +282,8 @@ public class PlayerHandler : MonoBehaviour
         UpdateStamina();
         UpdateParry();
         UpdateParryLabel();
+        UpdateDamageAudio();
+        UpdatePlayerLight();
 
         // revisa si puede enseñar el marcador del objetivo
         EnableObjectiveMark();
@@ -240,6 +296,45 @@ public class PlayerHandler : MonoBehaviour
     {
         if (CanRotate) RotateRigidbody();
         if (CanMove) MoveRigidbody();
+    }
+
+    private void LateUpdate()
+    {
+        if (!isInitialized) return;
+
+        UpdateCameraPosition();
+    }
+
+    // La luz del jugador se atenúa a la mitad al agacharse. No se toca mientras isParryActive,
+    // que ya la controla de forma exclusiva (agacharse está bloqueado durante el parry).
+    private void UpdatePlayerLight()
+    {
+        if (playerLight == null || isParryActive) return;
+
+        float multiplier = IsCrouching ? crouchLightMultiplier : 1f;
+        playerLight.range = originalLightRange * multiplier;
+        playerLight.intensity = originalLightIntensity * multiplier;
+    }
+
+    // Combina el descenso suave de la cámara al agacharse con el shake mientras un enemigo persigue
+    // activamente al jugador; ambos son offsets sobre la posición local original de la cámara.
+    private void UpdateCameraPosition()
+    {
+        float crouchTarget = IsCrouching ? crouchCameraYOffset : 0f;
+        crouchCameraOffsetCurrent = Mathf.Lerp(crouchCameraOffsetCurrent, crouchTarget, Time.deltaTime * crouchCameraLerpSpeed);
+
+        if (isBeingChased)
+        {
+            float shakeX = (Mathf.PerlinNoise(Time.time * chaseShakeFrequency, 0f) - 0.5f) * 2f * chaseShakeAmplitude;
+            float shakeY = (Mathf.PerlinNoise(0f, Time.time * chaseShakeFrequency) - 0.5f) * 2f * chaseShakeAmplitude;
+            chaseShakeOffset = new Vector3(shakeX, shakeY, 0f);
+        }
+        else
+        {
+            chaseShakeOffset = Vector3.zero;
+        }
+
+        cameraTransform.localPosition = cameraDefaultLocalPosition + new Vector3(0f, crouchCameraOffsetCurrent, 0f) + chaseShakeOffset;
     }
 
     private void OnTriggerStay(Collider collision)
@@ -407,10 +502,25 @@ public class PlayerHandler : MonoBehaviour
         EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
         UpdateHealthVisuals();
 
+        lastDamageTime = Time.time;
+        float healthFraction = maxHealth > 0f ? currentHealth / maxHealth : 0f;
+        AudioManager.PlayDamage(healthFraction);
+
         if (currentHealth <= 0f)
         {
             isDead = true;
+            AudioManager.StopDamage();
             EventManager.RaisePlayerDeath();
+        }
+    }
+
+    // BS_Damage es un loop: se corta en cuanto pasa damageLoopStopDelay sin daño nuevo
+    // (el jugador dejó de tocar al enemigo, o empezó a parriar).
+    private void UpdateDamageAudio()
+    {
+        if (Time.time - lastDamageTime > damageLoopStopDelay)
+        {
+            AudioManager.StopDamage();
         }
     }
 

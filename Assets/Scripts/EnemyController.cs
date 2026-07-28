@@ -66,6 +66,19 @@ public class EnemyController : MonoBehaviour
     [Range(0f, 1f)]
     private float stunSearchResetChance = 0.1f; // Probabilidad de reiniciar la persecución al patrullaje en vez de buscar
 
+    // Detección por oído: pasos del jugador dentro de este alcance (a volumen normal) pueden
+    // hacer que el enemigo entre en Searching o Confused. Solo aplica mientras patrulla: el
+    // property InChase ya cubre windup/persecución/búsqueda/confundido/aturdido, evitando que
+    // el oído interrumpa un compromiso visual en curso o uno recién terminado.
+    [SerializeField]
+    private float hearingRange = 17.5f;
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float minSearchChanceOnHear = 0.3f; // probabilidad de Searching si el paso se oye justo en el borde del alcance
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float maxSearchChanceOnHear = 0.95f; // probabilidad de Searching si el paso ocurre justo encima del enemigo
+
     // Atributos de control
     private GameObject player;
     private PlayerHandler playerHandler;
@@ -78,6 +91,7 @@ public class EnemyController : MonoBehaviour
     private Vector3 playerMoveDirection;
     private float stateDurationTotal;
     private Coroutine knockbackRoutine;
+    private bool chaseTrackingActive; // evita registrar/desregistrar la persecución más de una vez (AudioManager + ChaseStarted/Ended)
 
     // Atributos de patrullaje
     private int destPoint;
@@ -86,6 +100,15 @@ public class EnemyController : MonoBehaviour
     private float patrolPauseTimer;
 
     private Light EnemyLight;
+
+    // Silueta que se ve a través de paredes mientras el jugador está agachado (ver UpdateHighlight).
+    // Es una copia más grande del sprite real, creada en runtime, usando el shader Custom/SpriteXRay
+    // (ZTest Always) para que se dibuje encima de cualquier obstáculo de la escena.
+    [SerializeField] private Color highlightColor = new Color(1f, 0.85f, 0.2f, 0.6f);
+    [SerializeField] private float highlightScale = 1.15f;
+    private SpriteRenderer spriteRenderer;
+    private SpriteRenderer highlightRenderer;
+
     private Color InitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
     private Color EngageColor = Color.red;
     private Color SearchColor = Color.gray; // Color al que se apaga la luz durante Searching
@@ -104,7 +127,59 @@ public class EnemyController : MonoBehaviour
         get { return state == EnemyState.Stunned; }
     }
 
+    // Notifica cuando el primer/último enemigo entra o sale de persecución (comparte el mismo
+    // ciclo de vida que audioChaseActive: empieza en EnterChasing, termina en EnterPatrol). Lo
+    // consume, por ejemplo, el camera shake del jugador mientras lo están persiguiendo.
+    private static int globalChaseCount = 0;
+    public static event System.Action ChaseStarted;
+    public static event System.Action ChaseEnded;
+
+    // Debe llamarse una vez al iniciar/recargar una escena de gameplay, igual que
+    // AudioManager.ResetAmbience(), para no arrastrar un conteo colgado si una escena
+    // terminó abruptamente mientras un enemigo perseguía al jugador.
+    public static void ResetChaseState()
+    {
+        globalChaseCount = 0;
+    }
+
     //private CapsuleCollider collider;
+
+    void OnEnable()
+    {
+        PlayerFootsteps.FootstepHeard += OnPlayerFootstepHeard;
+    }
+
+    void OnDisable()
+    {
+        PlayerFootsteps.FootstepHeard -= OnPlayerFootstepHeard;
+    }
+
+    // Detección por oído: puede hacer que el enemigo entre en Searching (hacia la posición del
+    // paso) o en Confused, con más probabilidad de Searching cuanto más cerca se oyó el paso.
+    // Se ignora por completo mientras el enemigo esté en cualquier estado que no sea Patrolling
+    // (la detección visual manda: no debe interrumpir una persecución en curso ni reactivar
+    // Searching/Confused justo después de haber perdido al jugador por vista).
+    void OnPlayerFootstepHeard(Vector3 position, float loudness)
+    {
+        if (InChase) return;
+
+        float effectiveRange = hearingRange * loudness;
+        float distance = Vector3.Distance(transform.position, position);
+        if (distance > effectiveRange) return;
+
+        float proximity = effectiveRange > 0f ? 1f - Mathf.Clamp01(distance / effectiveRange) : 1f;
+        float searchChance = Mathf.Lerp(minSearchChanceOnHear, maxSearchChanceOnHear, proximity);
+
+        if (Random.value < searchChance)
+        {
+            lastKnownPlayerPosition = position;
+            EnterSearching(position);
+        }
+        else
+        {
+            EnterConfused();
+        }
+    }
 
     void Awake()
     {
@@ -140,11 +215,52 @@ public class EnemyController : MonoBehaviour
 
         EnemyLight = GetComponent<Light>();
 
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        highlightRenderer = CreateHighlightRenderer();
+
         GotoNextPoint();
+    }
+
+    // Crea, en runtime, la silueta ampliada usada para resaltar al enemigo mientras el jugador
+    // está agachado. No requiere ningún objeto o material configurado de antemano en el prefab.
+    SpriteRenderer CreateHighlightRenderer()
+    {
+        GameObject highlightObject = new GameObject("HighlightOutline");
+        Transform highlightTransform = highlightObject.transform;
+        highlightTransform.SetParent(transform, false);
+        highlightTransform.localPosition = Vector3.zero;
+        highlightTransform.localRotation = Quaternion.identity;
+        highlightTransform.localScale = Vector3.one * highlightScale;
+
+        SpriteRenderer highlight = highlightObject.AddComponent<SpriteRenderer>();
+        highlight.sprite = spriteRenderer.sprite;
+        highlight.color = highlightColor;
+        highlight.sortingOrder = spriteRenderer.sortingOrder - 1;
+        highlight.material = new Material(Shader.Find("Custom/SpriteXRay"));
+        highlight.enabled = false;
+        return highlight;
+    }
+
+    // Mientras el jugador está agachado, muestra la silueta ampliada (visible a través de
+    // paredes) y la mantiene sincronizada con el sprite real, que cambia entre frente/espalda.
+    void UpdateHighlight()
+    {
+        bool shouldHighlight = playerHandler.Crouching;
+        if (highlightRenderer.enabled != shouldHighlight)
+        {
+            highlightRenderer.enabled = shouldHighlight;
+        }
+
+        if (shouldHighlight)
+        {
+            highlightRenderer.sprite = spriteRenderer.sprite;
+        }
     }
 
     void Update()
     {
+        UpdateHighlight();
+
         switch (state)
         {
             case EnemyState.Patrolling:
@@ -275,6 +391,18 @@ public class EnemyController : MonoBehaviour
 
         lastKnownPlayerPosition = player.transform.position;
         playerMoveDirection = transform.forward;
+
+        if (!chaseTrackingActive)
+        {
+            chaseTrackingActive = true;
+            AudioManager.EnemyStartedChasing();
+
+            globalChaseCount++;
+            if (globalChaseCount == 1)
+            {
+                ChaseStarted?.Invoke();
+            }
+        }
     }
 
     void UpdateChasing()
@@ -291,6 +419,21 @@ public class EnemyController : MonoBehaviour
         else
         {
             EnterSearching();
+        }
+    }
+
+    // Detiene el override de BS_Chase en AudioManager, si este enemigo lo tenía activo.
+    void StopChaseAudio()
+    {
+        if (!chaseTrackingActive) return;
+
+        chaseTrackingActive = false;
+        AudioManager.EnemyStoppedChasing();
+
+        globalChaseCount--;
+        if (globalChaseCount == 0)
+        {
+            ChaseEnded?.Invoke();
         }
     }
 
@@ -406,6 +549,8 @@ public class EnemyController : MonoBehaviour
 
         EnemyLight.color = InitialColor;
 
+        StopChaseAudio();
+
         GotoNextPoint();
     }
 
@@ -416,6 +561,8 @@ public class EnemyController : MonoBehaviour
         state = EnemyState.Stunned;
         stateTimer = stunDuration;
         stunStartColor = EnemyLight.color;
+
+        AudioManager.RegisterParry();
 
         enemyAgent.isStopped = true;
         enemyAgent.velocity = Vector3.zero;
