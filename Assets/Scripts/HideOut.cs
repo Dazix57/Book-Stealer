@@ -84,10 +84,18 @@ public class HideOut : MonoBehaviour
         if (!isHidden)
         {
             hiddenTimer = 0f;
+            if (playerHandler != null) playerHandler.HideActionBar();
             return;
         }
 
         hiddenTimer += Time.deltaTime;
+
+        if (playerHandler != null)
+        {
+            float normalizedRemaining = 1f - hiddenTimer / hideCheeseGraceDuration;
+            playerHandler.SetHideActionBar(normalizedRemaining);
+        }
+
         if (hiddenTimer > hideCheeseGraceDuration && playerHandler != null)
         {
             playerHandler.ApplyDamage(hideCheeseDamagePerSecond * Time.deltaTime);

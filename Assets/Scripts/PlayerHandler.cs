@@ -70,10 +70,15 @@ public class PlayerHandler : MonoBehaviour
 
     // La luz se atenúa a la mitad mientras se está agachado. No se aplica mientras isParryActive,
     // que ya controla la luz de forma exclusiva (y agacharse está bloqueado durante el parry).
-    [SerializeField] private float crouchLightMultiplier = 0.5f;
+    [SerializeField] private float crouchLightMultiplier = 0.8f;
 
     [SerializeField] private TextMeshProUGUI parryLabel;
     private Color parryLabelOriginalColor;
+
+    // Barra de duración compartida por parry y hideout: invisible salvo mientras una de las
+    // dos acciones está en curso. HideOut la controla directamente vía SetHideActionBar/HideActionBar
+    // mientras isHidden es true; UpdateActionBar() la controla el resto del tiempo.
+    [SerializeField] private UnityEngine.UI.Slider actionBar;
 
     // Posición base de la cámara (antes de aplicar el descenso al agacharse y el shake de persecución)
     private Vector3 cameraDefaultLocalPosition;
@@ -87,10 +92,21 @@ public class PlayerHandler : MonoBehaviour
     // EnemyController.ChaseStarted/ChaseEnded, que comparten ciclo de vida con BS_Chase:
     // empieza al iniciar la persecución, termina solo cuando todos los enemigos volvieron a patrullar).
     [Header("Chase camera shake")]
-    [SerializeField] private float chaseShakeAmplitude = 0.03f; // metros, espacio local de la cámara
+    [SerializeField] private float chaseShakeAmplitude = 0.01f; // metros, espacio local de la cámara
     [SerializeField] private float chaseShakeFrequency = 25f; // velocidad del ruido (mientras más alto, más rápido tiembla)
     private bool isBeingChased = false;
     private Vector3 chaseShakeOffset = Vector3.zero;
+
+    // Parpadeo de la luz del jugador mientras lo persiguen: cada intervalo aleatorio
+    // (entre min y max) la luz se apaga brevemente antes de volver a su intensidad normal.
+    [Header("Chase light flicker")]
+    [SerializeField] private float chaseFlickerMinInterval = 0.5f;
+    [SerializeField] private float chaseFlickerMaxInterval = 2f;
+    [SerializeField] private float chaseFlickerOffDuration = 0.08f;
+    [SerializeField] [Range(0f, 1f)] private float chaseFlickerOffIntensity = 0.1f;
+    private float chaseFlickerTimer = 0f;
+    private float chaseFlickerElapsed = 0f;
+    private bool isFlickering = false;
 
     // Health setup
     [SerializeField] private float maxHealth = 100f;
@@ -110,19 +126,20 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private Color healthLowColor = new Color(0.35f, 0f, 0f);
 
     // Sneak meter setup
-    [SerializeField] private float sneakMultiplierBase = 0.4f;
+    [SerializeField] private float sneakMultiplierBase = 0.5f;
     [SerializeField] private float sneakDrainRate = 0.03f;
-    [SerializeField] private float sneakRegenRate = 0.015f;
+    [SerializeField] private float sneakRegenRate = 0.04f;
     [SerializeField] private float sneakSpeedMultiplier = 0.5f; // Velocidad mientras se está sneakeando, fijo sin importar cuánto se haya usado
+    [SerializeField] private UnityEngine.UI.Slider crouchBar; // Duración restante del bonus de sigilo antes de que el multiplicador vuelva a 1
     private float sneakMeter;
     private bool isSprinting = false;
 
     // Sprint / stamina setup
     [SerializeField] private float sprintStaminaDuration = 2f; // segundos de sprint continuo hasta vaciar el medidor
-    [SerializeField] private float staminaRegenRate = 0.05f; // fracción del medidor por segundo mientras no se está corriendo
+    [SerializeField] private float staminaRegenRate = 0.15f; // fracción del medidor por segundo mientras no se está corriendo
     [SerializeField] private float movingStaminaRegenMultiplier = 0.5f; // la regen se reduce a esta fracción mientras el jugador se mueve
     [SerializeField] private float staminaDepletionCooldown = 5f; // tras vaciarse del todo, no regenera nada durante este tiempo
-    [SerializeField] private UnityEngine.UI.Image staminaBar; // barra vertical rellenable sobre el texto del parry
+    [SerializeField] private UnityEngine.UI.Slider sprintBar; // duración restante antes de que se acabe el sprint
     private float staminaMeter = 1f; // 1 = lleno, 0 = vacío
     private float staminaRegenCooldownTimer = 0f;
 
@@ -194,11 +211,14 @@ public class PlayerHandler : MonoBehaviour
     private void HandleChaseStarted()
     {
         isBeingChased = true;
+        isFlickering = false;
+        chaseFlickerTimer = UnityEngine.Random.Range(chaseFlickerMinInterval, chaseFlickerMaxInterval);
     }
 
     private void HandleChaseEnded()
     {
         isBeingChased = false;
+        isFlickering = false;
         chaseShakeOffset = Vector3.zero;
     }
 
@@ -269,12 +289,20 @@ public class PlayerHandler : MonoBehaviour
         // Instancia del prefab 'coolDownMessagePreFab'
         coolDownMessage = Instantiate<GameObject>(coolDownMessagePreFab, Camera.main.transform.position, Quaternion.identity);
 
-        // Stamina bar: fuerza el tipo de relleno para que funcione como barra vertical
-        if (staminaBar != null)
+        if (sprintBar != null)
         {
-            staminaBar.type = UnityEngine.UI.Image.Type.Filled;
-            staminaBar.fillMethod = UnityEngine.UI.Image.FillMethod.Vertical;
-            staminaBar.fillAmount = staminaMeter;
+            sprintBar.value = staminaMeter;
+        }
+
+        if (crouchBar != null)
+        {
+            crouchBar.value = 1f;
+        }
+
+        // El ActionBar arranca invisible: solo se muestra mientras se para o se está escondido
+        if (actionBar != null)
+        {
+            actionBar.gameObject.SetActive(false);
         }
 
         isInitialized = true;
@@ -295,6 +323,7 @@ public class PlayerHandler : MonoBehaviour
         UpdateSneakMeter();
         UpdateStamina();
         UpdateParry();
+        UpdateActionBar();
         UpdateParryLabel();
         UpdateDamageAudio();
         UpdatePlayerLight();
@@ -325,9 +354,44 @@ public class PlayerHandler : MonoBehaviour
     {
         if (playerLight == null || isParryActive) return;
 
+        UpdateChaseFlicker();
+
         float multiplier = IsCrouching ? crouchLightMultiplier : 1f;
+        if (isFlickering) multiplier *= chaseFlickerOffIntensity;
+
         playerLight.range = originalLightRange * multiplier;
         playerLight.intensity = originalLightIntensity * multiplier;
+    }
+
+    // Mientras isBeingChased, apaga brevemente la luz (chaseFlickerOffDuration) cada intervalo
+    // aleatorio entre chaseFlickerMinInterval y chaseFlickerMaxInterval; se resuelve aquí como
+    // un simple temporizador, y UpdatePlayerLight es quien aplica el multiplicador resultante.
+    private void UpdateChaseFlicker()
+    {
+        if (!isBeingChased)
+        {
+            isFlickering = false;
+            return;
+        }
+
+        if (isFlickering)
+        {
+            chaseFlickerElapsed += Time.deltaTime;
+            if (chaseFlickerElapsed >= chaseFlickerOffDuration)
+            {
+                isFlickering = false;
+                chaseFlickerTimer = UnityEngine.Random.Range(chaseFlickerMinInterval, chaseFlickerMaxInterval);
+            }
+        }
+        else
+        {
+            chaseFlickerTimer -= Time.deltaTime;
+            if (chaseFlickerTimer <= 0f)
+            {
+                isFlickering = true;
+                chaseFlickerElapsed = 0f;
+            }
+        }
     }
 
     // Combina el descenso suave de la cámara al agacharse con el shake mientras un enemigo persigue
@@ -374,8 +438,7 @@ public class PlayerHandler : MonoBehaviour
         }
         else
         {
-            Texture jumpscareImage = Enemy_Controller != null ? Enemy_Controller.JumpscareImage : null;
-            TakeDamage(damagePerSecond * Time.fixedDeltaTime, jumpscareImage);
+            TakeDamage(damagePerSecond * Time.fixedDeltaTime);
         }
     }
 
@@ -426,7 +489,40 @@ public class PlayerHandler : MonoBehaviour
         }
     }
 
-    
+    // Mientras isHidden, HideOut controla el ActionBar directamente (SetHideActionBar/HideActionBar);
+    // aquí solo se maneja el caso de parry, para no pisar esa actualización.
+    private void UpdateActionBar()
+    {
+        if (actionBar == null || isHidden) return;
+
+        if (isParryActive)
+        {
+            actionBar.gameObject.SetActive(true);
+            actionBar.value = parryDuration > 0f ? parryTimer / parryDuration : 0f;
+        }
+        else
+        {
+            actionBar.gameObject.SetActive(false);
+        }
+    }
+
+    // Consultado por HideOut para reflejar en el ActionBar la duración restante antes de que
+    // empiece el daño por quedarse escondido demasiado tiempo (llega a 0 cuando el daño empieza).
+    public void SetHideActionBar(float normalizedRemaining)
+    {
+        if (actionBar == null) return;
+
+        actionBar.gameObject.SetActive(true);
+        actionBar.value = Mathf.Clamp01(normalizedRemaining);
+    }
+
+    // Consultado por HideOut al salir del escondite, para ocultar de nuevo el ActionBar
+    public void HideActionBar()
+    {
+        if (actionBar == null) return;
+
+        actionBar.gameObject.SetActive(false);
+    }
 
     private void UpdateParryLabel()
     {
@@ -504,7 +600,7 @@ public class PlayerHandler : MonoBehaviour
         mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity;
     }
 
-    private void TakeDamage(float amount, Texture jumpscareImage)
+    private void TakeDamage(float amount)
     {
         if (isDead) return;
 
@@ -520,11 +616,11 @@ public class PlayerHandler : MonoBehaviour
         {
             isDead = true;
 
-            // Bloquea el control del jugador durante el jumpscare y el menú de muerte
+            // Bloquea el control del jugador durante la secuencia de muerte y el menú de game over
             canMove = false;
             canRotate = false;
 
-            EventManager.RaisePlayerDeath(jumpscareImage);
+            EventManager.RaisePlayerDeath();
         }
     }
 
@@ -577,6 +673,12 @@ public class PlayerHandler : MonoBehaviour
         {
             sneakMeter = Mathf.Max(sneakMultiplierBase, sneakMeter - sneakRegenRate * Time.deltaTime);
         }
+
+        // Lleno al empezar a agachar (bonus fresco), vacío cuando sneakMeter llega a 1 (bonus agotado)
+        if (crouchBar != null)
+        {
+            crouchBar.value = 1f - Mathf.InverseLerp(sneakMultiplierBase, 1f, sneakMeter);
+        }
     }
 
     // Drena el medidor de stamina mientras se corre de verdad (no cuenta si el
@@ -608,9 +710,9 @@ public class PlayerHandler : MonoBehaviour
             staminaMeter = Mathf.Min(1f, staminaMeter + regenRate * Time.deltaTime);
         }
 
-        if (staminaBar != null)
+        if (sprintBar != null)
         {
-            staminaBar.fillAmount = staminaMeter;
+            sprintBar.value = staminaMeter;
         }
     }
 

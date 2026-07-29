@@ -134,6 +134,24 @@ public class EnemyController : MonoBehaviour
     private Coroutine knockbackRoutine;
     private bool chaseTrackingActive; // evita registrar/desregistrar la persecución más de una vez (AudioManager + ChaseStarted/Ended)
 
+    // Compartido entre todas las instancias: cuenta cuántos enemigos están persiguiendo
+    // activamente (Chasing o ForceApproach) a la vez, para saber cuándo el jugador
+    // deja de estar perseguido por completo (ver StartChaseTracking/StopChaseAudio).
+    private static int globalChaseCount;
+    public static event System.Action ChaseStarted;
+    public static event System.Action ChaseEnded;
+
+    // Disparado junto con ChaseStarted (mismo gate de globalChaseCount == 1), pero lleva la imagen
+    // del enemigo que inició la persecución, para el jumpscare rápido que la muestra en pantalla.
+    public static event System.Action<Texture> ChaseJumpscare;
+
+    // Llamado por InitializeGameplayAudio al cargar la escena de gameplay: globalChaseCount
+    // es estático, así que sin esto podría arrastrar un valor viejo de la escena anterior.
+    public static void ResetChaseState()
+    {
+        globalChaseCount = 0;
+    }
+
     // ForceApproach: usado por HideOut cuando el jugador se esconde demasiado cerca del enemigo.
     // El destino (ej. el interior de un mueble) suele estar fuera del NavMesh -- el agente solo
     // puede acercarse hasta el punto transitable más próximo, así que la llegada se mide por
@@ -193,10 +211,11 @@ public class EnemyController : MonoBehaviour
         get { return state == EnemyState.Stunned; }
     }
 
-    // Consultado por PlayerHandler al morir, para saber qué jumpscare mostrar
-    public Texture JumpscareImage
+    // Consultado por HideOut: a diferencia de InChase, no incluye Windup/Searching/Confused/Stunned,
+    // solo la persecución activa propiamente dicha.
+    public bool IsChasing
     {
-        get { return jumpscareImage; }
+        get { return state == EnemyState.Chasing; }
     }
 
     //private CapsuleCollider collider;
@@ -297,11 +316,12 @@ public class EnemyController : MonoBehaviour
     // necesitar coordinarse, y ningún waypoint termina asignado a más de uno.
     Transform[] AssignedWaypoints()
     {
-        PatrolWaypoint[] waypoints = FindObjectsByType<PatrolWaypoint>(FindObjectsSortMode.None);
+        
+        GameObject[] waypoints = GameObject.FindGameObjectsWithTag("WayPoint");
         EnemyController[] allEnemies = FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
 
         List<Transform> assigned = new List<Transform>();
-        foreach (PatrolWaypoint waypoint in waypoints)
+        foreach (GameObject waypoint in waypoints)
         {
             EnemyController closestEnemy = null;
             float closestDistance = float.PositiveInfinity;
@@ -500,6 +520,7 @@ public class EnemyController : MonoBehaviour
         if (globalChaseCount == 1)
         {
             ChaseStarted?.Invoke();
+            ChaseJumpscare?.Invoke(jumpscareImage);
         }
     }
 

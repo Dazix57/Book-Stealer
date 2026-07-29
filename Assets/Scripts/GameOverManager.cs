@@ -6,12 +6,13 @@ using UnityEngine.UI;
 public class GameOverManager : MonoBehaviour
 {
     [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private string mainMenuSceneName = "MenuPuyo";
 
-    // Duración del jumpscare estático antes de mostrar el menú de muerte
-    [SerializeField] private float jumpscareDuration = 1.5f;
+    // Duración del fundido de blanco a negro que se dispara al morir, antes de mostrar el panel
+    [SerializeField] private float deathFadeToBlackDuration = 0.5f;
 
-    // Imagen a pantalla completa para el jumpscare; se crea una única vez en tiempo de ejecución
-    private RawImage jumpscareDisplay;
+    // Overlay a pantalla completa para el flash de muerte; se crea una única vez en tiempo de ejecución
+    private Image deathFlash;
 
     private void OnEnable()
     {
@@ -23,71 +24,87 @@ public class GameOverManager : MonoBehaviour
         EventManager.OnPlayerDeath -= HandlePlayerDeath;
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         gameOverPanel.SetActive(false);
+
+        gameOverPanel.transform.Find("RestartButton").GetComponent<Button>().onClick.AddListener(RestartGame);
+        gameOverPanel.transform.Find("MenuButton").GetComponent<Button>().onClick.AddListener(LoadMainMenu);
     }
 
-    private void HandlePlayerDeath(Texture jumpscareImage)
+    private void HandlePlayerDeath()
     {
-        StartCoroutine(PlayJumpscareThenGameOver(jumpscareImage));
+        StartCoroutine(PlayDeathFlashThenGameOver());
     }
 
-    private IEnumerator PlayJumpscareThenGameOver(Texture jumpscareImage)
+    private IEnumerator PlayDeathFlashThenGameOver()
     {
-        if (jumpscareImage != null)
+        Image flash = GetDeathFlash();
+        flash.color = Color.white;
+        flash.gameObject.SetActive(true);
+
+        float elapsed = 0f;
+        while (elapsed < deathFadeToBlackDuration)
         {
-            RawImage display = GetJumpscareDisplay();
-            display.texture = jumpscareImage;
-            display.gameObject.SetActive(true);
-
-            yield return new WaitForSecondsRealtime(jumpscareDuration);
-
-            display.gameObject.SetActive(false);
+            elapsed += Time.unscaledDeltaTime;
+            flash.color = Color.Lerp(Color.white, Color.black, elapsed / deathFadeToBlackDuration);
+            yield return null;
         }
+        flash.color = Color.black;
 
         TriggerGameOver();
     }
 
-    // Crea, la primera vez que se necesita, una imagen estática a pantalla completa
-    // (sin zoom ni animación) sobre este mismo Canvas para mostrar el jumpscare.
-    private RawImage GetJumpscareDisplay()
+    // Crea, la primera vez que se necesita, un overlay a pantalla completa (detrás del
+    // gameOverPanel, ver SetAsFirstSibling) para el flash blanco -> negro sobre este mismo Canvas.
+    private Image GetDeathFlash()
     {
-        if (jumpscareDisplay != null) return jumpscareDisplay;
+        if (deathFlash != null) return deathFlash;
 
-        GameObject displayObject = new GameObject("JumpscareDisplay", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
-        displayObject.transform.SetParent(transform, false);
-        displayObject.transform.SetAsLastSibling();
+        GameObject flashObject = new GameObject("DeathFlash", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        flashObject.transform.SetParent(transform, false);
+        flashObject.transform.SetAsFirstSibling();
 
-        RectTransform rect = (RectTransform)displayObject.transform;
+        RectTransform rect = (RectTransform)flashObject.transform;
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
 
-        jumpscareDisplay = displayObject.GetComponent<RawImage>();
-        jumpscareDisplay.gameObject.SetActive(false);
+        deathFlash = flashObject.GetComponent<Image>();
+        deathFlash.raycastTarget = false;
+        deathFlash.gameObject.SetActive(false);
 
-        return jumpscareDisplay;
+        return deathFlash;
     }
 
-    // Update is called once per frame
     public void TriggerGameOver()
     {
         gameOverPanel.SetActive(true);
         Time.timeScale = 0f;
+
+        // El cursor está bloqueado y oculto durante el gameplay; hay que liberarlo para poder
+        // clickear Restart/Menu.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public void RestartGame()
     {
-        Time.timeScale = 1f; // IMPORTANTE: DEFINIR TIEMPO DE REINICIO PARA LAS ESCENAS
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name); 
+        Time.timeScale = 1f;
+
+        // El jugador (y el pauseMenu que trae consigo) están en DontDestroyOnLoad; sin destruirlo
+        // acá, sobreviviría a la recarga con su posición/salud de la muerte en vez de dejar que la
+        // escena recién cargada traiga uno fresco en su posición de partida.
+        InitializePauseMenu.DestroyPersistentPlayer();
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void LoadMainMenu()
     {
-        Time.timeScale = 1f; // IMPORTANTE: DEFINIR TIEMPO DE REINICIO PARA LAS ESCENAS
-        SceneManager.LoadScene("MainMenuScene"); // Ajustar nombre a la escena principal
+        Time.timeScale = 1f;
+        InitializePauseMenu.DestroyPersistentPlayer();
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 }

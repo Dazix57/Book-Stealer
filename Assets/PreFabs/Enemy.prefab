@@ -78,26 +78,7 @@ MonoBehaviour:
   chaseMultiplier: 2
   fieldOfView: 60
   viewDistance: 5
-  points:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  jumpscareImage: {fileID: 2800000, guid: 57e4d545e0c104146b66c5dd28674888, type: 3}
   patrolPauseMinDuration: 0.5
   patrolPauseMaxDuration: 5
   closeRangeDistance: 15
@@ -113,14 +94,14 @@ MonoBehaviour:
   stunKnockbackDuration: 0.3
   stunColorTransitionDuration: 0.5
   stunSearchResetChance: 0.1
-  hearingRange: 17.5
+  hearingRange: 15
   minSearchChanceOnHear: 0.3
   maxSearchChanceOnHear: 0.95
   searchChanceOnLoseSightBase: 0.5
   searchChanceIncreasePerParry: 0.1
   searchDurationMultiplierPerParry: 0.5
-  confusedDurationMultiplierPerParry: 0.5
-  rangeIncreasePerParry: 0.25
+  confusedDurationMultiplierPerParry: 0.2
+  rangeIncreasePerParry: 0.15
   maxParryTintStacks: 5
   baseSpeedIncreasePerParry: 0.05
   forceApproachArrivalDistance: 2.5
@@ -305,9 +286,9 @@ MonoBehaviour:
   stepIntervalAtReferenceSpeed: 0.4
   audioSource: {fileID: 0}
   minDistance: 1
-  maxDistance: 35
+  maxDistance: 27.5
   agent: {fileID: 0}
-  loudnessMultiplier: 1.4
+  loudnessMultiplier: 1.2
 --- !u!1 &9000000000000001001
 GameObject:
   m_ObjectHideFlags: 0
