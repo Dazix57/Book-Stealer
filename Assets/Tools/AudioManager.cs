@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +11,9 @@ public static class AudioManager
     static bool initialized = false;
     static AudioSource audioSource;
     static AudioSource musicSource;
+    static AudioSource damageSource;
+    static float damageVolumeScale = 0f; // 0 a HP lleno, 1 cerca de 0 HP
+    const float damageClipStartOffset = 2f; // BS_Damage trae ~2s de silencio al inicio
     static Dictionary<AudioClipName, AudioClip> audioClips = new Dictionary<AudioClipName, AudioClip>();
 
     const string UIVolumePrefKey = "UIVolume";
@@ -17,6 +21,25 @@ public static class AudioManager
     static float uiVolume = 1f;
     static float gameVolume = 1f;
     static AudioChannel musicChannel = AudioChannel.UI;
+
+    // Ambience escalation (por cantidad de parries) y override de persecución.
+    static readonly AudioClipName[] ambienceLevels =
+    {
+        AudioClipName.BS_Ambience1,
+        AudioClipName.BS_Ambience2,
+        AudioClipName.BS_Ambience3,
+        AudioClipName.BS_Ambience4,
+        AudioClipName.BS_Ambience5,
+    };
+    static int ambienceIndex = 0;
+    static int chaseCount = 0; // cuántos enemigos están persiguiendo al jugador ahora mismo
+
+    const float musicFadeDuration = 0.5f;
+    static AudioManagerRunner runner; // MonoBehaviour usado únicamente para poder correr el fade como coroutine
+    static Coroutine musicFadeRoutine;
+
+    // Componente vacío: existe solo para darle a esta clase estática un host de MonoBehaviour donde correr coroutines.
+    private class AudioManagerRunner : MonoBehaviour { }
     #endregion
 
     #region Properties
@@ -51,7 +74,8 @@ public static class AudioManager
     /// </summary>
     /// <param name="source"> The AudioSource used for one-shot SFX (button clicks, etc). </param>
     /// <param name="loopSource"> The AudioSource used for looping background music/theme songs. </param>
-    public static void Initialize(AudioSource source, AudioSource loopSource)
+    /// <param name="damageLoopSource"> The AudioSource used for the looping damage sound (BS_Damage). </param>
+    public static void Initialize(AudioSource source, AudioSource loopSource, AudioSource damageLoopSource)
     {
         /** Load all audio clips into the dictionary for easy access.
             Structure of the dictionary: Key = AudioClipName enum, Value = AudioClip loaded from folder 'Resources'.
@@ -66,6 +90,14 @@ public static class AudioManager
         audioSource = source;
         musicSource = loopSource;
         musicSource.loop = true;
+        damageSource = damageLoopSource;
+        damageSource.loop = true;
+
+        runner = musicSource.GetComponent<AudioManagerRunner>();
+        if (runner == null)
+        {
+            runner = musicSource.gameObject.AddComponent<AudioManagerRunner>();
+        }
 
         // Los SFX de UI (incluido el propio menú de pausa) deben seguir escuchándose
         // aunque AudioListener.pause silencie el resto del audio al pausar.
@@ -75,10 +107,21 @@ public static class AudioManager
         audioClips.Add(AudioClipName.ButtonSelectionSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonSelectionSound.ToString()));
         audioClips.Add(AudioClipName.ButtonConfirmationSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonConfirmationSound.ToString()));
         audioClips.Add(AudioClipName.PickUpSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.PickUpSound.ToString()));
+        audioClips.Add(AudioClipName.PlayerFootstep, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.PlayerFootstep.ToString()));
+        audioClips.Add(AudioClipName.EnemyFootstep, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.EnemyFootstep.ToString()));
 
         audioClips.Add(AudioClipName.MenuTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.MenuTheme.ToString()));
         audioClips.Add(AudioClipName.GameplayTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.GameplayTheme.ToString()));
+       
+        audioClips.Add(AudioClipName.BS_Ambience1, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience1.ToString()));
+        audioClips.Add(AudioClipName.BS_Ambience2, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience2.ToString()));
+        audioClips.Add(AudioClipName.BS_Ambience3, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience3.ToString()));
+        audioClips.Add(AudioClipName.BS_Ambience4, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience4.ToString()));
+        audioClips.Add(AudioClipName.BS_Ambience5, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience5.ToString()));
+        audioClips.Add(AudioClipName.BS_Chase, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Chase.ToString()));
+        audioClips.Add(AudioClipName.BS_Damage, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Damage.ToString()));
 
+        damageSource.clip = audioClips[AudioClipName.BS_Damage];
 
         uiVolume = PlayerPrefs.GetFloat(UIVolumePrefKey, 1f);
         gameVolume = PlayerPrefs.GetFloat(GameVolumePrefKey, 1f);
@@ -90,10 +133,29 @@ public static class AudioManager
     /// </summary>
     /// <param name="name"> The name of the audio file stored in the Resources folder. </param>
     /// <param name="channel"> Which volume slider (UI or Game) scales this clip. </param>
-    public static void Play(AudioClipName name, AudioChannel channel = AudioChannel.Game)
+    /// <param name="volumeScale"> Extra multiplier on top of the channel volume (e.g. footsteps that should sound quieter/louder than usual). </param>
+    public static void Play(AudioClipName name, AudioChannel channel = AudioChannel.Game, float volumeScale = 1f)
     {
-        float volume = channel == AudioChannel.UI ? uiVolume : gameVolume;
+        float volume = (channel == AudioChannel.UI ? uiVolume : gameVolume) * volumeScale;
         audioSource.PlayOneShot(audioClips[name], volume);
+    }
+
+    /// <summary>
+    /// Returns the loaded AudioClip for a given name, for playback through a source other than
+    /// the shared one-shot AudioSource (e.g. a local, spatialized source like footsteps).
+    /// </summary>
+    public static AudioClip GetClip(AudioClipName name)
+    {
+        return audioClips[name];
+    }
+
+    /// <summary>
+    /// Returns the current volume multiplier (0-1) for a channel, so a local AudioSource can
+    /// scale its own PlayOneShot calls consistently with the shared one.
+    /// </summary>
+    public static float GetChannelVolume(AudioChannel channel)
+    {
+        return channel == AudioChannel.UI ? uiVolume : gameVolume;
     }
 
     /// <summary>
@@ -105,9 +167,52 @@ public static class AudioManager
     public static void PlayMusic(AudioClipName name, AudioChannel channel = AudioChannel.UI)
     {
         musicChannel = channel;
-        musicSource.clip = audioClips[name];
-        musicSource.volume = channel == AudioChannel.UI ? uiVolume : gameVolume;
+        float targetVolume = channel == AudioChannel.UI ? uiVolume : gameVolume;
+
+        if (musicFadeRoutine != null)
+        {
+            runner.StopCoroutine(musicFadeRoutine);
+            musicFadeRoutine = null;
+        }
+
+        if (musicSource.isPlaying)
+        {
+            musicFadeRoutine = runner.StartCoroutine(CrossfadeMusic(audioClips[name], targetVolume));
+        }
+        else
+        {
+            musicSource.clip = audioClips[name];
+            musicSource.volume = targetVolume;
+            musicSource.Play();
+        }
+    }
+
+    // Baja el volumen a 0, cambia el clip, y sube el volumen al objetivo; medio segundo por tramo.
+    static IEnumerator CrossfadeMusic(AudioClip clip, float targetVolume)
+    {
+        float startVolume = musicSource.volume;
+        float t = 0f;
+        while (t < musicFadeDuration)
+        {
+            t += Time.deltaTime;
+            musicSource.volume = Mathf.Lerp(startVolume, 0f, t / musicFadeDuration);
+            yield return null;
+        }
+
+        musicSource.volume = 0f;
+        musicSource.clip = clip;
         musicSource.Play();
+
+        t = 0f;
+        while (t < musicFadeDuration)
+        {
+            t += Time.deltaTime;
+            musicSource.volume = Mathf.Lerp(0f, targetVolume, t / musicFadeDuration);
+            yield return null;
+        }
+
+        musicSource.volume = targetVolume;
+        musicFadeRoutine = null;
     }
 
     /// <summary>
@@ -115,9 +220,99 @@ public static class AudioManager
     /// </summary>
     public static void StopMusic()
     {
+        if (musicFadeRoutine != null)
+        {
+            runner.StopCoroutine(musicFadeRoutine);
+            musicFadeRoutine = null;
+        }
+
         if (musicSource != null)
         {
             musicSource.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Resets the ambience escalation and chase override, then starts playing the base ambience track.
+    /// Should be called once when a gameplay scene starts (including reloads from a checkpoint).
+    /// </summary>
+    public static void ResetAmbience()
+    {
+        ambienceIndex = 0;
+        chaseCount = 0;
+        PlayMusic(ambienceLevels[ambienceIndex], AudioChannel.Game);
+        StopDamage();
+    }
+
+    /// <summary>
+    /// Starts (if not already playing) and updates the volume of the looping damage sound, based on
+    /// the player's current health fraction (0-1). Silent at full health (1), full Game volume as
+    /// health approaches 0.
+    /// </summary>
+    public static void PlayDamage(float healthFraction)
+    {
+        damageVolumeScale = Mathf.Clamp01(1f - healthFraction);
+        damageSource.volume = damageVolumeScale * gameVolume;
+
+        if (!damageSource.isPlaying)
+        {
+            damageSource.time = damageClipStartOffset;
+            damageSource.Play();
+        }
+    }
+
+    /// <summary>
+    /// Stops the looping damage sound (e.g. the player stopped taking damage, or died).
+    /// </summary>
+    public static void StopDamage()
+    {
+        if (damageSource != null)
+        {
+            damageSource.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Registers a successful parry: escalates the ambience track one step (capped at BS_Ambience5).
+    /// If no enemy is currently chasing, the new ambience starts playing immediately; otherwise it
+    /// will kick in as soon as the chase ends.
+    /// </summary>
+    public static void RegisterParry()
+    {
+        int previousIndex = ambienceIndex;
+        ambienceIndex = Mathf.Min(ambienceIndex + 1, ambienceLevels.Length - 1);
+
+        if (chaseCount == 0 && ambienceIndex != previousIndex)
+        {
+            PlayMusic(ambienceLevels[ambienceIndex], AudioChannel.Game);
+        }
+    }
+
+    /// <summary>
+    /// Called when an enemy starts actively chasing the player. Overrides whatever ambience is
+    /// playing with BS_Chase. Additional enemies chasing at the same time are a no-op.
+    /// </summary>
+    public static void EnemyStartedChasing()
+    {
+        chaseCount++;
+        if (chaseCount == 1)
+        {
+            PlayMusic(AudioClipName.BS_Chase, AudioChannel.Game);
+        }
+    }
+
+    /// <summary>
+    /// Called when an enemy gives up the chase and returns to patrolling. Once the last chasing
+    /// enemy stops, restores the ambience track matching the current parry count.
+    /// </summary>
+    public static void EnemyStoppedChasing()
+    {
+        if (chaseCount == 0) return;
+
+        chaseCount--;
+        if (chaseCount == 0)
+        {
+            PlayMusic(ambienceLevels[ambienceIndex], AudioChannel.Game);
         }
     }
 
@@ -146,6 +341,11 @@ public static class AudioManager
         if (musicSource != null && musicChannel == AudioChannel.Game)
         {
             musicSource.volume = gameVolume;
+        }
+
+        if (damageSource != null && damageSource.isPlaying)
+        {
+            damageSource.volume = damageVolumeScale * gameVolume;
         }
     }
     #endregion

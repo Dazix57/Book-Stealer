@@ -20,6 +20,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Prueba.unity
     guid: 7c4a36e16bd8368418dd2de06f0b578f
+  - enabled: 1
+    path: Assets/Scenes/Nivel_JCC_Obsoleto.unity
+    guid: ff8d928dda1a0e340ba919b342e0638e
+  - enabled: 1
+    path: Assets/Scenes/Nivel_Puyo.unity
+    guid: b90fc4e217cff2f43817da43aaf03900
+  - enabled: 1
+    path: Assets/Scenes/Nivel_JCC.unity
+    guid: f09a1d246bec26745b434944529d6d70
+  - enabled: 1
+    path: Assets/Scenes/Nivel_Daza.unity
+    guid: 540fc3f5a2be6456faae39e778c0d571
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

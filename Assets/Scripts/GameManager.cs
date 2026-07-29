@@ -11,23 +11,6 @@ public class GameManager : MonoBehaviour
     // jugador en la última al restaurar un checkpoint (Dictionary no tiene orden garantizado).
     private static readonly List<string> completedObjectiveAreasOrder = new List<string>();
 
-    private void OnEnable()
-    {
-        EventManager.OnPlayerDeath += HandlePlayerDeath;
-    }
-
-    private void OnDisable()
-    {
-        EventManager.OnPlayerDeath -= HandlePlayerDeath;
-    }
-
-    private void HandlePlayerDeath()
-    {
-        Debug.Log("Restarting...");
-        
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
     /// <summary>
     /// Marca como completada un área de objetivos (identificada por el tag de su GameObject).
     /// Solo se guarda en memoria; no persiste entre sesiones de juego.

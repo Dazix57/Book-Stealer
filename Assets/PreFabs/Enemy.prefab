@@ -13,6 +13,10 @@ GameObject:
   - component: {fileID: 847398664842913329}
   - component: {fileID: 2142685243935070240}
   - component: {fileID: 65846026444974735}
+  - component: {fileID: 8200494656746947877}
+  - component: {fileID: 7638041887147635512}
+  - component: {fileID: 5677834769181905003}
+  - component: {fileID: 9202851512697790074}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Enemy
@@ -72,13 +76,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Follow
   chaseMultiplier: 2
-  timerDuration: 5
   fieldOfView: 60
   viewDistance: 5
-  points:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  jumpscareImage: {fileID: 2800000, guid: 57e4d545e0c104146b66c5dd28674888, type: 3}
+  patrolPauseMinDuration: 0.5
+  patrolPauseMaxDuration: 5
+  closeRangeDistance: 15
+  windupDuration: 0.5
+  windupTurnSpeed: 720
+  searchMinDuration: 2.5
+  searchMaxDuration: 4
+  searchProjectionDistance: 30
+  confusedDuration: 2.8
+  confusedSnapInterval: 0.4
+  stunDuration: 5
+  stunKnockbackDistance: 5
+  stunKnockbackDuration: 0.3
+  stunColorTransitionDuration: 0.5
+  stunSearchResetChance: 0.1
+  hearingRange: 15
+  minSearchChanceOnHear: 0.3
+  maxSearchChanceOnHear: 0.95
+  searchChanceOnLoseSightBase: 0.5
+  searchChanceIncreasePerParry: 0.1
+  searchDurationMultiplierPerParry: 0.5
+  confusedDurationMultiplierPerParry: 0.2
+  rangeIncreasePerParry: 0.15
+  maxParryTintStacks: 5
+  baseSpeedIncreasePerParry: 0.05
+  forceApproachArrivalDistance: 2.5
+  lightGreenTint: {r: 0.65, g: 1, b: 0.55, a: 1}
+  darkGreenTint: {r: 0.05, g: 0.25, b: 0.05, a: 1}
 --- !u!54 &2142685243935070240
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -88,7 +116,7 @@ Rigidbody:
   m_GameObject: {fileID: 7258902185182019201}
   serializedVersion: 5
   m_Mass: 1
-  m_LinearDamping: 1
+  m_LinearDamping: 10
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -116,10 +144,151 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e836c1858746fff4587102dab8b0519b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyFacingSprite
   forwardSprite: {fileID: 9000000000000001001}
   backwardSprite: {fileID: 9000000000000002001}
+  highlightColor: {r: 1, g: 0.85, b: 0.2, a: 0.6}
+  highlightScale: 1.15
+--- !u!136 &8200494656746947877
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7258902185182019201}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 1
+  m_Height: 5
+  m_Direction: 1
+  m_Center: {x: 0, y: -1.25, z: 0}
+--- !u!108 &7638041887147635512
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7258902185182019201}
+  m_Enabled: 1
+  serializedVersion: 13
+  m_Type: 0
+  m_Color: {r: 0.18894258, g: 0.6473104, b: 0.8415094, a: 1}
+  m_Intensity: 50
+  m_Range: 30
+  m_SpotAngle: 116.192924
+  m_InnerSpotAngle: 0
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShapeRadius: 0.025
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!114 &5677834769181905003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7258902185182019201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
+--- !u!114 &9202851512697790074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7258902185182019201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a25fa4e4518f8c344bcaf806b92756bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyFootsteps
+  footstepClip: 13
+  channel: 1
+  minSpeedToStep: 0.2
+  referenceSpeed: 5
+  stepIntervalAtReferenceSpeed: 0.4
+  audioSource: {fileID: 0}
+  minDistance: 1
+  maxDistance: 27.5
+  agent: {fileID: 0}
+  loudnessMultiplier: 1.2
 --- !u!1 &9000000000000001001
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,28 +322,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1434776355010187935}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &9000000000000001003
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9000000000000001001}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 30bdadb8528c84ef8b6501a5202e1997, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage:
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!212 &9000000000000001004
 SpriteRenderer:
   serializedVersion: 3
@@ -235,6 +382,28 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!95 &9000000000000001003
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000000000000001001}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 30bdadb8528c84ef8b6501a5202e1997, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &9000000000000002001
 GameObject:
   m_ObjectHideFlags: 0
@@ -268,28 +437,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1434776355010187935}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &9000000000000002003
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9000000000000002001}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: db1a50e5872d4ffaa29d2c2381f9d6a4, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage:
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!212 &9000000000000002004
 SpriteRenderer:
   serializedVersion: 3
@@ -350,3 +497,25 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!95 &9000000000000002003
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000000000000002001}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: db1a50e5872d4ffaa29d2c2381f9d6a4, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

@@ -340,7 +340,30 @@ public class InitializePauseMenu : MonoBehaviour
         // Cierra el menu de pausa y libera el control del jugador antes de recargar la escena
         EnablePauseMenu(false);
 
+        // Sin esto, el jugador (y este mismo singleton) sobrevivirían la recarga por estar en
+        // DontDestroyOnLoad, arrastrando su posición/salud viejas en vez de dejar que la escena
+        // recién cargada traiga un jugador fresco.
+        DestroyPersistentPlayer();
+
         GameManager.LoadCheckpoint();
+    }
+
+    // Destruye el jugador persistido (y el pauseMenu instanciado) antes de recargar o cambiar de
+    // escena por Restart/Checkpoint: ambos están en DontDestroyOnLoad (ver Awake), así que ninguno
+    // se destruye solo al recargar. Sin esto, sobrevivirían con su posición/salud/estado viejos en
+    // vez de dejar que la escena nueva traiga un jugador fresco en su posición de partida (igual
+    // que GoToMainMenu ya hace, de forma directa, al ir al menú).
+    public static void DestroyPersistentPlayer()
+    {
+        if (instance == null) return;
+
+        if (instance.pauseMenu != null)
+        {
+            Destroy(instance.pauseMenu);
+        }
+
+        Destroy(instance.gameObject);
+        instance = null;
     }
 
     void SetupSettingsPanel()
