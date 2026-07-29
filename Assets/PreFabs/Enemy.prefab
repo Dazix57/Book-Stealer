@@ -97,6 +97,13 @@ MonoBehaviour:
   hearingRange: 15
   minSearchChanceOnHear: 0.3
   maxSearchChanceOnHear: 0.95
+  enemyAudioSource: {fileID: 0}
+  audioMinDistance: 5
+  audioMaxDistance: 40
+  idleSoundMinInterval: 15
+  idleSoundMaxInterval: 45
+  idleaudioSource: {fileID: 0}
+  idleClip: 14
   searchChanceOnLoseSightBase: 0.5
   searchChanceIncreasePerParry: 0.1
   searchDurationMultiplierPerParry: 0.5
@@ -141,7 +148,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7258902185182019201}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e836c1858746fff4587102dab8b0519b, type: 3}
   m_Name: 
@@ -183,7 +190,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.18894258, g: 0.6473104, b: 0.8415094, a: 1}
+  m_Color: {r: 0.5803922, g: 0, b: 0.8274511, a: 1}
   m_Intensity: 50
   m_Range: 30
   m_SpotAngle: 116.192924
@@ -300,6 +307,7 @@ GameObject:
   - component: {fileID: 9000000000000001002}
   - component: {fileID: 9000000000000001004}
   - component: {fileID: 9000000000000001003}
+  - component: {fileID: 6626569016341849184}
   m_Layer: 0
   m_Name: ForwardSprite
   m_TagString: Untagged
@@ -404,6 +412,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &6626569016341849184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000000000000001001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97da3b82328589e4c9b5c3b9c16713fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Billboard
 --- !u!1 &9000000000000002001
 GameObject:
   m_ObjectHideFlags: 0
@@ -415,6 +435,7 @@ GameObject:
   - component: {fileID: 9000000000000002002}
   - component: {fileID: 9000000000000002004}
   - component: {fileID: 9000000000000002003}
+  - component: {fileID: 29029288669134875}
   m_Layer: 0
   m_Name: BackwardSprite
   m_TagString: Untagged
@@ -519,3 +540,15 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &29029288669134875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000000000000002001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97da3b82328589e4c9b5c3b9c16713fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Billboard

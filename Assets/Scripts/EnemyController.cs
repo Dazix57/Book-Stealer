@@ -41,7 +41,7 @@ public class EnemyController : MonoBehaviour
     // Si el jugador está dentro de este rango, el enemigo nunca lo pierde de vista
     // (evita falsos negativos del raycast/FOV cuando el jugador está pegado al enemigo)
     [SerializeField]
-    private float closeRangeDistance = 20f;
+    private float closeRangeDistance = 32f;
 
     // Windup: gira hacia el jugador antes de empezar la persecución
     [SerializeField]
@@ -56,6 +56,7 @@ public class EnemyController : MonoBehaviour
     private float searchMaxDuration = 4f;
     [SerializeField]
     private float searchProjectionDistance = 30f;
+
 
     // Confused: mira en direcciones aleatorias buscando al jugador
     [SerializeField]
@@ -89,6 +90,30 @@ public class EnemyController : MonoBehaviour
     [Range(0f, 1f)]
     private float maxSearchChanceOnHear = 0.95f; // probabilidad de Searching si el paso ocurre justo encima del enemigo
 
+    [Header("Sonidos")]
+    [SerializeField]
+    private AudioSource enemyAudioSource; // local a este GameObject; se crea sola si no se asigna
+    [SerializeField]
+    private float audioMinDistance = 5f;
+    [SerializeField]
+    private float audioMaxDistance = 40f;
+
+    // Sonido de ambiente mientras patrulla, a intervalos aleatorios entre estos dos valores
+    [SerializeField]
+    private float idleSoundMinInterval = 15f;
+    [SerializeField]
+    private float idleSoundMaxInterval = 45f;
+    private float idleSoundTimer;
+    [SerializeField] private AudioSource idleaudioSource;
+    [SerializeField] private AudioClipName idleClip;
+    // Una de estas tres se elige al azar cada vez que el enemigo nota al jugador (ver EnterWindup)
+    private static readonly AudioClipName[] reactSounds =
+    {
+        AudioClipName.React1,
+        AudioClipName.React2,
+        AudioClipName.React3,
+    };
+
     // Escalada por parry: cada vez que este enemigo es parriado (ver Parry() y parryCount más
     // abajo) se vuelve más agresivo. Todos estos incrementos son acumulativos (parryCount veces).
     [Header("Escalada por parry")]
@@ -117,7 +142,7 @@ public class EnemyController : MonoBehaviour
 
     // Velocidad base ya escalada por parries; se usa en vez de baseSpeed en todos lados
     float EffectiveBaseSpeed => baseSpeed * (1f + baseSpeedIncreasePerParry * parryCount);
-
+    protected virtual float VolumeScale => 1f;
     float ParryTintProgress => maxParryTintStacks > 0 ? Mathf.Clamp01((float)parryCount / maxParryTintStacks) : 1f;
 
     // Atributos de control
@@ -174,16 +199,16 @@ public class EnemyController : MonoBehaviour
 
     // El sprite (forward/backward) y su silueta de resalte mientras el jugador está agachado
     // viven en EnemyFacingSprite; solo se le pide que la muestre u oculte.
-    private EnemyFacingSprite facingSprite;
+    //private EnemyFacingSprite facingSprite;
 
     // Colores base (0 parries) de cada estado. Con cada parry, TODOS viran hacia distintos tonos
     // de verde: Patrolling llega a lightGreenTint, Chase (Engage) a darkGreenTint, y Confused/Search
     // quedan en puntos intermedios entre ambos (ver las properties InitialColor/EngageColor/etc.
     // más abajo, que son las que de verdad se usan en el resto de la clase).
-    private Color baseInitialColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color de luz cuando está patrullando
+    private Color baseInitialColor = new Color(160f / 255f, 0f / 255f, 211f / 255f); // Color de luz cuando está patrullando
     private Color baseEngageColor = Color.red;
     private Color baseSearchColor = Color.gray; // Color al que se apaga la luz durante Searching
-    private Color baseConfusedColor = new Color(48f / 255f, 165f / 255f, 215f / 255f); // Color al que vira la luz durante Confused
+    private Color baseConfusedColor = new Color(160f / 255f, 0f / 255f, 211f / 255f); // Color al que vira la luz durante Confused
     private Color windupStartColor; // Color de luz al entrar en Windup (varía según de dónde venga)
     private Color stunStartColor; // Color de luz al entrar en Stunned (varía según de dónde venga)
 
@@ -305,9 +330,41 @@ public class EnemyController : MonoBehaviour
         originalLightRange = EnemyLight.range;
         originalLightIntensity = EnemyLight.intensity;
 
-        facingSprite = GetComponent<EnemyFacingSprite>();
+        //facingSprite = GetComponent<EnemyFacingSprite>();
+
+        if (enemyAudioSource == null) enemyAudioSource = GetComponent<AudioSource>();
+        if (enemyAudioSource == null) enemyAudioSource = gameObject.AddComponent<AudioSource>();
+        enemyAudioSource.playOnAwake = false;
+        enemyAudioSource.loop = false;
+        enemyAudioSource.spatialBlend = 1f;
+        enemyAudioSource.rolloffMode = AudioRolloffMode.Linear;
+        enemyAudioSource.minDistance = audioMinDistance;
+        enemyAudioSource.maxDistance = audioMaxDistance;
+
+        idleSoundTimer = Random.Range(idleSoundMinInterval, idleSoundMaxInterval);
+
+        if (idleaudioSource == null)
+        {
+            idleaudioSource = GetComponent<AudioSource>();
+        }
+        if (idleaudioSource == null)
+        {
+            idleaudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        idleaudioSource.playOnAwake = false;
+        idleaudioSource.loop = false;
+        idleaudioSource.spatialBlend = 1f; // 3D: el sonido se percibe local a este GameObject, con caída por distancia
+        idleaudioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        idleaudioSource.minDistance = 1f;
+        idleaudioSource.maxDistance = 35f;
 
         GotoNextPoint();
+    }
+
+    void PlaySound(AudioClipName clip)
+    {
+        enemyAudioSource.PlayOneShot(AudioManager.GetClip(clip), AudioManager.GetChannelVolume(AudioChannel.Game));
     }
 
     // Reparte todos los PatrolWaypoint de la escena entre los enemigos por cercanía: cada
@@ -349,7 +406,7 @@ public class EnemyController : MonoBehaviour
     // (visible a través de paredes) del sprite forward/backward que esté activo en ese momento.
     void UpdateHighlight()
     {
-        facingSprite.SetHighlighted(playerHandler.Crouching);
+        //facingSprite.SetHighlighted(playerHandler.Crouching);
     }
 
     // Aumento visual puro: el rango Y la intensidad de la luz crecen, en la misma proporción,
@@ -448,7 +505,22 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        UpdateIdleSound();
         Patrol();
+    }
+
+    // Sonido de ambiente a intervalos aleatorios mientras patrulla, para dar la sensación de
+    // que el enemigo sigue ahí incluso lejos de la vista del jugador.
+    void UpdateIdleSound()
+    {
+        idleSoundTimer -= Time.deltaTime;
+        if (idleSoundTimer <= 0f)
+        {
+            float volume = AudioManager.GetChannelVolume(AudioChannel.Game) * VolumeScale;
+            idleaudioSource.PlayOneShot(AudioManager.GetClip(idleClip), volume);
+            //PlaySound(AudioClipName.BS_Enemy1Idle);
+            idleSoundTimer = Random.Range(idleSoundMinInterval, idleSoundMaxInterval);
+        }
     }
 
     void EnterWindup()
@@ -460,6 +532,8 @@ public class EnemyController : MonoBehaviour
         enemyAgent.isStopped = true;
         enemyAgent.velocity = Vector3.zero;
         enemyAgent.updateRotation = false;
+
+        PlaySound(reactSounds[Random.Range(0, reactSounds.Length)]);
     }
 
     void UpdateWindup()
@@ -689,13 +763,14 @@ public class EnemyController : MonoBehaviour
     public void Parry(Vector3 knockbackDirection)
     {
         parryCount++;
-        facingSprite.SetParryTint(ParryTintProgress);
+        //facingSprite.SetParryTint(ParryTintProgress);
 
         state = EnemyState.Stunned;
         stateTimer = stunDuration;
         stunStartColor = EnemyLight.color;
 
         AudioManager.RegisterParry();
+        PlaySound(AudioClipName.Parry);
 
         enemyAgent.isStopped = true;
         enemyAgent.velocity = Vector3.zero;
@@ -767,6 +842,8 @@ public class EnemyController : MonoBehaviour
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
         {
+            PlaySound(AudioClipName.Comeback);
+
             if (Random.value < stunSearchResetChance)
             {
                 EnterPatrol();

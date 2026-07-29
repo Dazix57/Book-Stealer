@@ -510,9 +510,9 @@ MonoBehaviour:
   isHidden: 0
   PushForce: 5000
   crouchKey: 17
+  sprintKey: 51
   parryKey: 20
   pickUpKey: 19
-  sprintKey: 51
   objectiveMark: 3
   isParryActive: 0
   parryDuration: 1
@@ -908,7 +908,7 @@ Transform:
   m_GameObject: {fileID: 6350854086405397509}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.2, z: -0.106}
+  m_LocalPosition: {x: 0.0000016987324, y: 0.2, z: -0.60600036}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
