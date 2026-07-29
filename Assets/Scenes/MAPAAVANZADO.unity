@@ -22379,7 +22379,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1055248037 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 471415405690454138, guid: f232405286616944b9853f37047ed89e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 188183815729171042, guid: f232405286616944b9853f37047ed89e, type: 3}
   m_PrefabInstance: {fileID: 482696639}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1061146661
@@ -43593,6 +43593,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 880632035044159277, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1042600479040901526, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1948276442470024936, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -43609,13 +43617,17 @@ PrefabInstance:
       propertyPath: near clip plane
       value: 0.3
       objectReference: {fileID: 0}
+    - target: {fileID: 3238949486368922257, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3414877654275047766, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 3414877654275047766, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7581235951901003070, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Height
