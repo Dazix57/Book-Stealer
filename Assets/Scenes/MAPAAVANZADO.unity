@@ -72278,7 +72278,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2049045144}
   m_Layer: 0
-  m_Name: MapaEscalado_5x5_PasilloMesas
+  m_Name: Mapa
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
