@@ -355,9 +355,10 @@ public class PlayerHandler : MonoBehaviour
     {
         if (!collision.CompareTag("Enemy")) return;
 
+        EnemyController Enemy_Controller = collision.GetComponent<EnemyController>();
+
         if (isParryActive)
         {
-            EnemyController Enemy_Controller = collision.GetComponent<EnemyController>();
             if (Enemy_Controller == null) return;
 
             Vector3 pushDirection = collision.transform.position - transform.position;
@@ -373,7 +374,8 @@ public class PlayerHandler : MonoBehaviour
         }
         else
         {
-            TakeDamage(damagePerSecond * Time.fixedDeltaTime);
+            Texture jumpscareImage = Enemy_Controller != null ? Enemy_Controller.JumpscareImage : null;
+            TakeDamage(damagePerSecond * Time.fixedDeltaTime, jumpscareImage);
         }
     }
 
@@ -502,7 +504,7 @@ public class PlayerHandler : MonoBehaviour
         mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity;
     }
 
-    private void TakeDamage(float amount)
+    private void TakeDamage(float amount, Texture jumpscareImage)
     {
         if (isDead) return;
 
@@ -517,8 +519,12 @@ public class PlayerHandler : MonoBehaviour
         if (currentHealth <= 0f)
         {
             isDead = true;
-            AudioManager.StopDamage();
-            EventManager.RaisePlayerDeath();
+
+            // Bloquea el control del jugador durante el jumpscare y el menú de muerte
+            canMove = false;
+            canRotate = false;
+
+            EventManager.RaisePlayerDeath(jumpscareImage);
         }
     }
 

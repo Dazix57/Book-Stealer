@@ -29,6 +29,10 @@ public class EnemyController : MonoBehaviour
     // el recorrido a cada enemigo por separado, y cada uno cubre su propia zona sin superponerse.
     private Transform[] points;
 
+    // Imagen estática mostrada a pantalla completa cuando este enemigo mata al jugador
+    [SerializeField]
+    private Texture jumpscareImage;
+
     [SerializeField]
     private float patrolPauseMinDuration = 0.5f; // Espera al llegar a un punto antes de ir al siguiente
     [SerializeField]
@@ -189,26 +193,10 @@ public class EnemyController : MonoBehaviour
         get { return state == EnemyState.Stunned; }
     }
 
-    // Consultado por HideOut: la extracción forzosa de un escondite está reservada a Chasing
-    // (ver Hide()); Windup/Searching/Confused ya no pueden disparar ni esa ni la búsqueda normal.
-    public bool IsChasing
+    // Consultado por PlayerHandler al morir, para saber qué jumpscare mostrar
+    public Texture JumpscareImage
     {
-        get { return state == EnemyState.Chasing; }
-    }
-
-    // Notifica cuando el primer/último enemigo entra o sale de persecución (comparte el mismo
-    // ciclo de vida que audioChaseActive: empieza en EnterChasing, termina en EnterPatrol). Lo
-    // consume, por ejemplo, el camera shake del jugador mientras lo están persiguiendo.
-    private static int globalChaseCount = 0;
-    public static event System.Action ChaseStarted;
-    public static event System.Action ChaseEnded;
-
-    // Debe llamarse una vez al iniciar/recargar una escena de gameplay, igual que
-    // AudioManager.ResetAmbience(), para no arrastrar un conteo colgado si una escena
-    // terminó abruptamente mientras un enemigo perseguía al jugador.
-    public static void ResetChaseState()
-    {
-        globalChaseCount = 0;
+        get { return jumpscareImage; }
     }
 
     //private CapsuleCollider collider;

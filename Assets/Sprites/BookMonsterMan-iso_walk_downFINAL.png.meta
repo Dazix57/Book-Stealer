@@ -1,0 +1,694 @@
+fileFormatVersion: 2
+guid: 07ade45fedf23421b9b65f9c518dd8d2
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_0
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 1086
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 81b5a51419b15465b92fc3b3668b299c
+      internalID: 1154397008
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_1
+      rect:
+        serializedVersion: 2
+        x: 337
+        y: 1086
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0a0827eec31e748a683d9523b9a82a95
+      internalID: 1170914169
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_2
+      rect:
+        serializedVersion: 2
+        x: 592
+        y: 1087
+        width: 110
+        height: 124
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7790a97d54ea44b7c80c5f95f1bad550
+      internalID: -224011603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_3
+      rect:
+        serializedVersion: 2
+        x: 848
+        y: 1089
+        width: 110
+        height: 123
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6eac6521aa265464aaeeeea8ebd5ac90
+      internalID: -1784175432
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_4
+      rect:
+        serializedVersion: 2
+        x: 1105
+        y: 1090
+        width: 108
+        height: 122
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 896b2e0c4315c4374a8cf350fd515a68
+      internalID: -1359177849
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_5
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 835
+        width: 107
+        height: 122
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b90f94444f6bf4050b51a8b9ef3f8418
+      internalID: -1377963155
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_6
+      rect:
+        serializedVersion: 2
+        x: 338
+        y: 837
+        width: 105
+        height: 120
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5ed03f0c3ea6d49f2bb0d5253601558f
+      internalID: 898805291
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_7
+      rect:
+        serializedVersion: 2
+        x: 595
+        y: 838
+        width: 102
+        height: 119
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6e0067519952a42e6bef3c75e9817699
+      internalID: 230730951
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_8
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 839
+        width: 99
+        height: 119
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fbd6ebf044bc6485b8dc15014aaf512b
+      internalID: 550240676
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_9
+      rect:
+        serializedVersion: 2
+        x: 1109
+        y: 839
+        width: 98
+        height: 119
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a04290fa32d644b90a8f320618b2589a
+      internalID: 924734632
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_10
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 582
+        width: 98
+        height: 120
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 80dd2148875c842aabac5a7955b07d20
+      internalID: -1577564873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_11
+      rect:
+        serializedVersion: 2
+        x: 340
+        y: 582
+        width: 100
+        height: 119
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 204d5baedaddc465292b847b53ef5096
+      internalID: -1463704784
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_12
+      rect:
+        serializedVersion: 2
+        x: 595
+        y: 581
+        width: 102
+        height: 120
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 61f8843cece9443ef96b89e4b2658ffc
+      internalID: 567587944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_13
+      rect:
+        serializedVersion: 2
+        x: 850
+        y: 579
+        width: 105
+        height: 122
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fa9f0f2aa8bce47ebbf1acf1d5e0724b
+      internalID: 339072587
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_14
+      rect:
+        serializedVersion: 2
+        x: 1105
+        y: 578
+        width: 108
+        height: 123
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9735fd5f8873646edaf641ba82a86869
+      internalID: 1301002812
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_15
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 321
+        width: 110
+        height: 123
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5a83da849c2c142aebf13fe140ebbb7a
+      internalID: -1953360838
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_16
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 319
+        width: 110
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 78c4ca64b27c444ecb67626731999ffc
+      internalID: -1291506033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_17
+      rect:
+        serializedVersion: 2
+        x: 593
+        y: 318
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a189083cb433845d19854e339c85205a
+      internalID: 6822797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_18
+      rect:
+        serializedVersion: 2
+        x: 849
+        y: 318
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1fac00644278c4dfc9942a1f8acb5f04
+      internalID: 1551558701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_19
+      rect:
+        serializedVersion: 2
+        x: 1105
+        y: 318
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bec67f1b0145f46bab6115e590d83c7e
+      internalID: 1121612348
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_20
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 62
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 63cdd30e0b1ab43399cd10737a1e3cd1
+      internalID: 1684685380
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_21
+      rect:
+        serializedVersion: 2
+        x: 337
+        y: 62
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1ca442d81051d4f44a0abbf098869099
+      internalID: 2137811857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_22
+      rect:
+        serializedVersion: 2
+        x: 593
+        y: 62
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 147ef849791d84f3f8fddb9075933448
+      internalID: 1492372398
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_23
+      rect:
+        serializedVersion: 2
+        x: 849
+        y: 62
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b286dbed4ca1e4ceda128d6a1f1cf9f3
+      internalID: -1640502357
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BookMonsterMan-iso_walk_downFINAL_24
+      rect:
+        serializedVersion: 2
+        x: 1105
+        y: 62
+        width: 109
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb24be6c381e548579b2eff72157556f
+      internalID: 1449546604
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 762ae4b89678f4445928de1001accc38
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":714.0,"y":491.0},"gridSpriteOffset":{"x":163.0,"y":153.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      BookMonsterMan-iso_walk_downFINAL_0: 1154397008
+      BookMonsterMan-iso_walk_downFINAL_1: 1170914169
+      BookMonsterMan-iso_walk_downFINAL_10: -1577564873
+      BookMonsterMan-iso_walk_downFINAL_11: -1463704784
+      BookMonsterMan-iso_walk_downFINAL_12: 567587944
+      BookMonsterMan-iso_walk_downFINAL_13: 339072587
+      BookMonsterMan-iso_walk_downFINAL_14: 1301002812
+      BookMonsterMan-iso_walk_downFINAL_15: -1953360838
+      BookMonsterMan-iso_walk_downFINAL_16: -1291506033
+      BookMonsterMan-iso_walk_downFINAL_17: 6822797
+      BookMonsterMan-iso_walk_downFINAL_18: 1551558701
+      BookMonsterMan-iso_walk_downFINAL_19: 1121612348
+      BookMonsterMan-iso_walk_downFINAL_2: -224011603
+      BookMonsterMan-iso_walk_downFINAL_20: 1684685380
+      BookMonsterMan-iso_walk_downFINAL_21: 2137811857
+      BookMonsterMan-iso_walk_downFINAL_22: 1492372398
+      BookMonsterMan-iso_walk_downFINAL_23: -1640502357
+      BookMonsterMan-iso_walk_downFINAL_24: 1449546604
+      BookMonsterMan-iso_walk_downFINAL_3: -1784175432
+      BookMonsterMan-iso_walk_downFINAL_4: -1359177849
+      BookMonsterMan-iso_walk_downFINAL_5: -1377963155
+      BookMonsterMan-iso_walk_downFINAL_6: 898805291
+      BookMonsterMan-iso_walk_downFINAL_7: 230730951
+      BookMonsterMan-iso_walk_downFINAL_8: 550240676
+      BookMonsterMan-iso_walk_downFINAL_9: 924734632
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
