@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Book-Stealer.slnx"
+    "dotnet.defaultSolution": "Book Stealer.slnx"
 }
