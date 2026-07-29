@@ -1,0 +1,632 @@
+[
+ {
+  "file": "01_rotted_wood_variant_a.png",
+  "material": "01_rotted_wood",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   75,
+   313,
+   221
+  ],
+  "size": [
+   201,
+   146
+  ]
+ },
+ {
+  "file": "01_rotted_wood_variant_b.png",
+  "material": "01_rotted_wood",
+  "variant": "variant_b",
+  "source_box": [
+   335,
+   75,
+   542,
+   221
+  ],
+  "size": [
+   207,
+   146
+  ]
+ },
+ {
+  "file": "01_rotted_wood_variant_c.png",
+  "material": "01_rotted_wood",
+  "variant": "variant_c",
+  "source_box": [
+   562,
+   75,
+   776,
+   220
+  ],
+  "size": [
+   214,
+   145
+  ]
+ },
+ {
+  "file": "01_rotted_wood_variant_d.png",
+  "material": "01_rotted_wood",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   75,
+   1010,
+   220
+  ],
+  "size": [
+   214,
+   145
+  ]
+ },
+ {
+  "file": "01_rotted_wood_variant_e.png",
+  "material": "01_rotted_wood",
+  "variant": "variant_e",
+  "source_box": [
+   1031,
+   75,
+   1252,
+   220
+  ],
+  "size": [
+   221,
+   145
+  ]
+ },
+ {
+  "file": "01_rotted_wood_variant_f.png",
+  "material": "01_rotted_wood",
+  "variant": "variant_f",
+  "source_box": [
+   1273,
+   75,
+   1478,
+   220
+  ],
+  "size": [
+   205,
+   145
+  ]
+ },
+ {
+  "file": "02_rusted_metal_variant_a.png",
+  "material": "02_rusted_metal",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   231,
+   313,
+   362
+  ],
+  "size": [
+   201,
+   131
+  ]
+ },
+ {
+  "file": "02_rusted_metal_variant_b.png",
+  "material": "02_rusted_metal",
+  "variant": "variant_b",
+  "source_box": [
+   335,
+   231,
+   542,
+   362
+  ],
+  "size": [
+   207,
+   131
+  ]
+ },
+ {
+  "file": "02_rusted_metal_variant_c.png",
+  "material": "02_rusted_metal",
+  "variant": "variant_c",
+  "source_box": [
+   562,
+   231,
+   775,
+   362
+  ],
+  "size": [
+   213,
+   131
+  ]
+ },
+ {
+  "file": "02_rusted_metal_variant_d.png",
+  "material": "02_rusted_metal",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   231,
+   1010,
+   362
+  ],
+  "size": [
+   214,
+   131
+  ]
+ },
+ {
+  "file": "02_rusted_metal_variant_e.png",
+  "material": "02_rusted_metal",
+  "variant": "variant_e",
+  "source_box": [
+   1031,
+   231,
+   1251,
+   362
+  ],
+  "size": [
+   220,
+   131
+  ]
+ },
+ {
+  "file": "02_rusted_metal_variant_f.png",
+  "material": "02_rusted_metal",
+  "variant": "variant_f",
+  "source_box": [
+   1273,
+   231,
+   1478,
+   362
+  ],
+  "size": [
+   205,
+   131
+  ]
+ },
+ {
+  "file": "03_decayed_painted_variant_a.png",
+  "material": "03_decayed_painted",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   370,
+   313,
+   501
+  ],
+  "size": [
+   201,
+   131
+  ]
+ },
+ {
+  "file": "03_decayed_painted_variant_b.png",
+  "material": "03_decayed_painted",
+  "variant": "variant_b",
+  "source_box": [
+   335,
+   370,
+   542,
+   501
+  ],
+  "size": [
+   207,
+   131
+  ]
+ },
+ {
+  "file": "03_decayed_painted_variant_c.png",
+  "material": "03_decayed_painted",
+  "variant": "variant_c",
+  "source_box": [
+   562,
+   370,
+   775,
+   501
+  ],
+  "size": [
+   213,
+   131
+  ]
+ },
+ {
+  "file": "03_decayed_painted_variant_d.png",
+  "material": "03_decayed_painted",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   370,
+   1011,
+   501
+  ],
+  "size": [
+   215,
+   131
+  ]
+ },
+ {
+  "file": "03_decayed_painted_variant_e.png",
+  "material": "03_decayed_painted",
+  "variant": "variant_e",
+  "source_box": [
+   1031,
+   370,
+   1251,
+   501
+  ],
+  "size": [
+   220,
+   131
+  ]
+ },
+ {
+  "file": "03_decayed_painted_variant_f.png",
+  "material": "03_decayed_painted",
+  "variant": "variant_f",
+  "source_box": [
+   1273,
+   370,
+   1478,
+   501
+  ],
+  "size": [
+   205,
+   131
+  ]
+ },
+ {
+  "file": "04_cracked_concrete_variant_a.png",
+  "material": "04_cracked_concrete",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   509,
+   313,
+   634
+  ],
+  "size": [
+   201,
+   125
+  ]
+ },
+ {
+  "file": "04_cracked_concrete_variant_b.png",
+  "material": "04_cracked_concrete",
+  "variant": "variant_b",
+  "source_box": [
+   335,
+   509,
+   543,
+   634
+  ],
+  "size": [
+   208,
+   125
+  ]
+ },
+ {
+  "file": "04_cracked_concrete_variant_c.png",
+  "material": "04_cracked_concrete",
+  "variant": "variant_c",
+  "source_box": [
+   562,
+   509,
+   775,
+   634
+  ],
+  "size": [
+   213,
+   125
+  ]
+ },
+ {
+  "file": "04_cracked_concrete_variant_d.png",
+  "material": "04_cracked_concrete",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   509,
+   1010,
+   634
+  ],
+  "size": [
+   214,
+   125
+  ]
+ },
+ {
+  "file": "04_cracked_concrete_variant_e.png",
+  "material": "04_cracked_concrete",
+  "variant": "variant_e",
+  "source_box": [
+   1029,
+   509,
+   1251,
+   634
+  ],
+  "size": [
+   222,
+   125
+  ]
+ },
+ {
+  "file": "04_cracked_concrete_variant_f.png",
+  "material": "04_cracked_concrete",
+  "variant": "variant_f",
+  "source_box": [
+   1272,
+   509,
+   1478,
+   634
+  ],
+  "size": [
+   206,
+   125
+  ]
+ },
+ {
+  "file": "05_blood_stained_wood_variant_a.png",
+  "material": "05_blood_stained_wood",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   643,
+   313,
+   767
+  ],
+  "size": [
+   201,
+   124
+  ]
+ },
+ {
+  "file": "05_blood_stained_wood_variant_b.png",
+  "material": "05_blood_stained_wood",
+  "variant": "variant_b",
+  "source_box": [
+   335,
+   642,
+   542,
+   767
+  ],
+  "size": [
+   207,
+   125
+  ]
+ },
+ {
+  "file": "05_blood_stained_wood_variant_c.png",
+  "material": "05_blood_stained_wood",
+  "variant": "variant_c",
+  "source_box": [
+   561,
+   642,
+   775,
+   767
+  ],
+  "size": [
+   214,
+   125
+  ]
+ },
+ {
+  "file": "05_blood_stained_wood_variant_d.png",
+  "material": "05_blood_stained_wood",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   643,
+   1010,
+   767
+  ],
+  "size": [
+   214,
+   124
+  ]
+ },
+ {
+  "file": "05_blood_stained_wood_variant_e.png",
+  "material": "05_blood_stained_wood",
+  "variant": "variant_e",
+  "source_box": [
+   1030,
+   643,
+   1251,
+   767
+  ],
+  "size": [
+   221,
+   124
+  ]
+ },
+ {
+  "file": "05_blood_stained_wood_variant_f.png",
+  "material": "05_blood_stained_wood",
+  "variant": "variant_f",
+  "source_box": [
+   1272,
+   643,
+   1478,
+   767
+  ],
+  "size": [
+   206,
+   124
+  ]
+ },
+ {
+  "file": "06_moldy_green_variant_a.png",
+  "material": "06_moldy_green",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   776,
+   313,
+   899
+  ],
+  "size": [
+   201,
+   123
+  ]
+ },
+ {
+  "file": "06_moldy_green_variant_b.png",
+  "material": "06_moldy_green",
+  "variant": "variant_b",
+  "source_box": [
+   335,
+   776,
+   543,
+   899
+  ],
+  "size": [
+   208,
+   123
+  ]
+ },
+ {
+  "file": "06_moldy_green_variant_c.png",
+  "material": "06_moldy_green",
+  "variant": "variant_c",
+  "source_box": [
+   561,
+   776,
+   775,
+   899
+  ],
+  "size": [
+   214,
+   123
+  ]
+ },
+ {
+  "file": "06_moldy_green_variant_d.png",
+  "material": "06_moldy_green",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   776,
+   1011,
+   899
+  ],
+  "size": [
+   215,
+   123
+  ]
+ },
+ {
+  "file": "06_moldy_green_variant_e.png",
+  "material": "06_moldy_green",
+  "variant": "variant_e",
+  "source_box": [
+   1030,
+   776,
+   1251,
+   899
+  ],
+  "size": [
+   221,
+   123
+  ]
+ },
+ {
+  "file": "06_moldy_green_variant_f.png",
+  "material": "06_moldy_green",
+  "variant": "variant_f",
+  "source_box": [
+   1272,
+   776,
+   1478,
+   899
+  ],
+  "size": [
+   206,
+   123
+  ]
+ },
+ {
+  "file": "07_dark_brown_brick_variant_a.png",
+  "material": "07_dark_brown_brick",
+  "variant": "variant_a",
+  "source_box": [
+   112,
+   907,
+   313,
+   1015
+  ],
+  "size": [
+   201,
+   108
+  ]
+ },
+ {
+  "file": "07_dark_brown_brick_variant_b.png",
+  "material": "07_dark_brown_brick",
+  "variant": "variant_b",
+  "source_box": [
+   334,
+   907,
+   542,
+   1015
+  ],
+  "size": [
+   208,
+   108
+  ]
+ },
+ {
+  "file": "07_dark_brown_brick_variant_c.png",
+  "material": "07_dark_brown_brick",
+  "variant": "variant_c",
+  "source_box": [
+   561,
+   907,
+   775,
+   1015
+  ],
+  "size": [
+   214,
+   108
+  ]
+ },
+ {
+  "file": "07_dark_brown_brick_variant_d.png",
+  "material": "07_dark_brown_brick",
+  "variant": "variant_d",
+  "source_box": [
+   796,
+   907,
+   1011,
+   1015
+  ],
+  "size": [
+   215,
+   108
+  ]
+ },
+ {
+  "file": "07_dark_brown_brick_variant_e.png",
+  "material": "07_dark_brown_brick",
+  "variant": "variant_e",
+  "source_box": [
+   1030,
+   907,
+   1251,
+   1015
+  ],
+  "size": [
+   221,
+   108
+  ]
+ },
+ {
+  "file": "07_dark_brown_brick_variant_f.png",
+  "material": "07_dark_brown_brick",
+  "variant": "variant_f",
+  "source_box": [
+   1272,
+   906,
+   1478,
+   1015
+  ],
+  "size": [
+   206,
+   109
+  ]
+ }
+]
