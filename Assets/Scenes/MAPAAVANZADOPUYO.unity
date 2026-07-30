@@ -80894,7 +80894,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6248294369018384924, guid: c0d808b806a60044bbb2f8f0c4684928, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7812590495056322762, guid: c0d808b806a60044bbb2f8f0c4684928, type: 3}
       propertyPath: m_NavMeshData
@@ -237763,11 +237763,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 880632035044159277, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1042600479040901526, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1948276442470024936, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Enabled
@@ -237787,7 +237787,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3238949486368922257, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3414877654275047766, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Name
@@ -237795,7 +237795,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3414877654275047766, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7581235951901003070, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Height
