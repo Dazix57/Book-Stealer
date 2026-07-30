@@ -188,6 +188,7 @@ GameObject:
   - component: {fileID: 5076025042009075216}
   - component: {fileID: 5366075308663842107}
   - component: {fileID: 880247675279803544}
+  - component: {fileID: 9001122334455667788}
   m_Layer: 0
   m_Name: Key
   m_TagString: Key
@@ -292,6 +293,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c972b62537dd443b0f73be23c289da, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ItemHandler
   itemPanelPreFab: {fileID: 950000001, guid: e61b820c07b64661a72ca57e13434d3e, type: 3}
+--- !u!135 &9001122334455667788
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8622454005230113740}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 3
+  m_Center: {x: 0, y: 0, z: 0}

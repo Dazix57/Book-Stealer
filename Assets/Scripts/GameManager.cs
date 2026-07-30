@@ -11,6 +11,27 @@ public class GameManager : MonoBehaviour
     // jugador en la última al restaurar un checkpoint (Dictionary no tiene orden garantizado).
     private static readonly List<string> completedObjectiveAreasOrder = new List<string>();
 
+    // Cada entrada es el tag del área cuya llave recogió el jugador (ej. "Area01").
+    // Permite consultar cuántas llaves lleva actualmente (Count) y de qué áreas.
+    private static readonly List<string> collectedKeys = new List<string>();
+
+    public static void AddKey(string areaTag)
+    {
+        collectedKeys.Add(areaTag);
+    }
+
+    public static int KeyCount => collectedKeys.Count;
+
+    public static IReadOnlyList<string> CollectedKeys => collectedKeys;
+
+    // Retira 'count' llaves de la lista (ej. al abrir una puerta). No distingue de qué área
+    // vino cada llave: todas cuentan igual para cualquier puerta.
+    public static void SpendKeys(int count)
+    {
+        int amountToRemove = Mathf.Min(count, collectedKeys.Count);
+        collectedKeys.RemoveRange(collectedKeys.Count - amountToRemove, amountToRemove);
+    }
+
     /// <summary>
     /// Marca como completada un área de objetivos (identificada por el tag de su GameObject).
     /// Solo se guarda en memoria; no persiste entre sesiones de juego.

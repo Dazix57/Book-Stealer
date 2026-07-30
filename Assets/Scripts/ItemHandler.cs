@@ -49,7 +49,8 @@ public class ItemHandler : MonoBehaviour
     {
         if (player != null && inRange && Keyboard.current[player.GetComponent<PlayerHandler>().PickUpKey].wasPressedThisFrame)
         {
-            AudioManager.Play(AudioClipName.PickUpSound, AudioChannel.Game);
+            AudioClipName pickUpSound = gameObject.CompareTag("Key") ? AudioClipName.KeyPickUpSound : AudioClipName.PickUpSound;
+            AudioManager.Play(pickUpSound, AudioChannel.Game);
             Destroy(itemPanel);
             Destroy(gameObject);
         }

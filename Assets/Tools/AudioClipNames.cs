@@ -11,6 +11,8 @@ public enum AudioClipName
     MenuTheme,
     GameplayTheme,
     PickUpSound,
+    KeyPickUpSound,
+    DoorOpenSound,
     BS_Ambience1,
     BS_Ambience2,
     BS_Ambience3,

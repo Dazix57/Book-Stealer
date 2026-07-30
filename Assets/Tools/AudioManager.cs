@@ -107,6 +107,10 @@ public static class AudioManager
         audioClips.Add(AudioClipName.ButtonSelectionSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonSelectionSound.ToString()));
         audioClips.Add(AudioClipName.ButtonConfirmationSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.ButtonConfirmationSound.ToString()));
         audioClips.Add(AudioClipName.PickUpSound, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.PickUpSound.ToString()));
+        // El archivo de la llave y el de la puerta no siguen la convención "NombreDelEnum.ext"
+        // de los demás SFX, así que se cargan por su nombre de archivo real en vez de ToString().
+        audioClips.Add(AudioClipName.KeyPickUpSound, Resources.Load<AudioClip>("SoundEffects/key-twist-in-lock-47832"));
+        audioClips.Add(AudioClipName.DoorOpenSound, Resources.Load<AudioClip>("SoundEffects/door_open"));
         audioClips.Add(AudioClipName.PlayerFootstep, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.PlayerFootstep.ToString()));
         audioClips.Add(AudioClipName.EnemyFootstep, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.EnemyFootstep.ToString()));
 

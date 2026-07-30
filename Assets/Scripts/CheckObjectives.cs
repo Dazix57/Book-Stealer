@@ -89,6 +89,7 @@ public class CheckObjectives : MonoBehaviour
             if (!keyPicked && FindChildByTag("Key") == null)
             {
                 keyPicked = true;
+                GameManager.AddKey(gameObject.tag);
             }
 
             if (keyPicked)
@@ -101,7 +102,7 @@ public class CheckObjectives : MonoBehaviour
             }
             else
             {
-                objectivesText.text = $"Objectives Completed! Pick up the key to open the door.";
+                objectivesText.text = $"Objectives Completed! Pick up the key to open doors.";
             }
         }
         else

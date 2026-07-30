@@ -10,12 +10,18 @@ TagManager:
   - ObjectiveArea
   - PauseMenu
   - Mark
-  - a1
-  - a2
-  - a3
   - Area01
   - Area02
   - Key
+  - Area03
+  - Area04
+  - Tutorial
+  - Area05
+  - Area06
+  - Area07
+  - Area08
+  - Area09
+  - Area10
   layers:
   - Default
   - TransparentFX
