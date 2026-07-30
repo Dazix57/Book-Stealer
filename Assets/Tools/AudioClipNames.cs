@@ -22,4 +22,10 @@ public enum AudioClipName
     BS_Damage,
     PlayerFootstep,
     EnemyFootstep,
+    BS_Enemy1Idle,
+    React1,
+    React2,
+    React3,
+    Parry,
+    Comeback,
 }

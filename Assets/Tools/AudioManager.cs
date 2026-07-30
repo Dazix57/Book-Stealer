@@ -113,6 +113,12 @@ public static class AudioManager
         audioClips.Add(AudioClipName.DoorOpenSound, Resources.Load<AudioClip>("SoundEffects/door_open"));
         audioClips.Add(AudioClipName.PlayerFootstep, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.PlayerFootstep.ToString()));
         audioClips.Add(AudioClipName.EnemyFootstep, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.EnemyFootstep.ToString()));
+        audioClips.Add(AudioClipName.BS_Enemy1Idle, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.BS_Enemy1Idle.ToString()));
+        audioClips.Add(AudioClipName.React1, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.React1.ToString()));
+        audioClips.Add(AudioClipName.React2, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.React2.ToString()));
+        audioClips.Add(AudioClipName.React3, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.React3.ToString()));
+        audioClips.Add(AudioClipName.Parry, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.Parry.ToString()));
+        audioClips.Add(AudioClipName.Comeback, Resources.Load<AudioClip>("SoundEffects/" + AudioClipName.Comeback.ToString()));
 
         audioClips.Add(AudioClipName.MenuTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.MenuTheme.ToString()));
         audioClips.Add(AudioClipName.GameplayTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.GameplayTheme.ToString()));
