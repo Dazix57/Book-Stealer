@@ -21,7 +21,7 @@ public class Billboard : MonoBehaviour {
     // There are two ways people billboard things.
     switch (billboardType) {
       case BillboardType.LookAtCamera:
-        if (Camera == null || Camera.main == null) return;
+        if (Camera.main == null || Camera.main == null) return;
         transform.LookAt(Camera.main.transform.position, Vector3.up);
         break;
       case BillboardType.CameraForward:

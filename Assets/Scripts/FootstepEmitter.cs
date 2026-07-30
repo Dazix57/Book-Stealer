@@ -20,6 +20,10 @@ public abstract class FootstepEmitter : MonoBehaviour
     protected abstract float CurrentSpeed { get; }
     protected virtual float VolumeScale => 1f;
 
+    // Refuerzo de volumen mientras el emisor está en chase (ver EnemyFootsteps.ChaseBoost);
+    // el jugador nunca lo activa, así que su pisada siempre suena a volumen normal.
+    protected virtual bool ChaseBoost => false;
+
     protected virtual void Awake()
     {
         if (audioSource == null)
@@ -55,7 +59,7 @@ public abstract class FootstepEmitter : MonoBehaviour
         if (stepTimer >= stepInterval)
         {
             stepTimer -= stepInterval;
-            float volume = AudioManager.GetChannelVolume(channel) * VolumeScale;
+            float volume = AudioManager.GetMixedVolume(footstepClip, channel, ChaseBoost) * VolumeScale;
             audioSource.PlayOneShot(AudioManager.GetClip(footstepClip), volume);
             OnFootstep(speed);
         }

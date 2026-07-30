@@ -72,8 +72,6 @@ public class EnemyController : MonoBehaviour
     [SerializeField]
     private float stunKnockbackDuration = 0.3f; // Duración del empujón suave (no es un teletransporte)
     [SerializeField]
-    private float stunColorTransitionDuration = 0.5f; // Duración del fundido de luz al entrar/salir del aturdimiento
-    [SerializeField]
     [Range(0f, 1f)]
     private float stunSearchResetChance = 0.1f; // Probabilidad de reiniciar la persecución al patrullaje en vez de buscar
 
@@ -97,6 +95,19 @@ public class EnemyController : MonoBehaviour
     private float audioMinDistance = 5f;
     [SerializeField]
     private float audioMaxDistance = 40f;
+
+    // Zumbido de proximidad: suena todo el tiempo (en cualquier estado), en loop, y es Unity
+    // quien sube/baja su volumen según la distancia real al AudioListener (la cámara del jugador)
+    // vía minDistance/maxDistance — no hace falta medir la distancia a mano cuadro a cuadro.
+    // minDistance actúa como "piso": dentro de ese radio el volumen ya no sigue subiendo, para
+    // que nunca se reviente por más cerca que el jugador se ponga.
+    [Header("Sonido de proximidad")]
+    [SerializeField]
+    private AudioSource proximityAudioSource; // siempre se crea de cero: no debe compartirse con enemyAudioSource/idleaudioSource
+    [SerializeField]
+    private float proximityMinDistance = 3f;
+    [SerializeField]
+    private float proximityMaxDistance = 18f;
 
     // Sonido de ambiente mientras patrulla, a intervalos aleatorios entre estos dos valores
     [SerializeField]
@@ -127,8 +138,6 @@ public class EnemyController : MonoBehaviour
     private float confusedDurationMultiplierPerParry = 0.5f; // -50% de duración de Confused por parry (con piso en 0)
     [SerializeField]
     private float rangeIncreasePerParry = 0.25f; // +25% al closeRangeDistance y al hearingRange, por parry
-    [SerializeField]
-    private int maxParryTintStacks = 5; // parries para llegar al verde completo (sprite y luz de patrullaje)
     private int parryCount = 0;
 
     // Consultado por HideOut para escalar su propio rango de extracción forzada por parry
@@ -143,7 +152,6 @@ public class EnemyController : MonoBehaviour
     // Velocidad base ya escalada por parries; se usa en vez de baseSpeed en todos lados
     float EffectiveBaseSpeed => baseSpeed * (1f + baseSpeedIncreasePerParry * parryCount);
     protected virtual float VolumeScale => 1f;
-    float ParryTintProgress => maxParryTintStacks > 0 ? Mathf.Clamp01((float)parryCount / maxParryTintStacks) : 1f;
 
     // Atributos de control
     private GameObject player;
@@ -193,37 +201,11 @@ public class EnemyController : MonoBehaviour
     private bool isPatrolPaused;
     private float patrolPauseTimer;
 
-    private Light EnemyLight;
-    private float originalLightRange; // capturado en Awake(); ver UpdateParryLightScale
-    private float originalLightIntensity; // ídem, escala en la misma proporción que el rango
-
     // El sprite (forward/backward) y su silueta de resalte mientras el jugador está agachado
-    // viven en EnemyFacingSprite; solo se le pide que la muestre u oculte.
-    //private EnemyFacingSprite facingSprite;
-
-    // Colores base (0 parries) de cada estado. Con cada parry, TODOS viran hacia distintos tonos
-    // de verde: Patrolling llega a lightGreenTint, Chase (Engage) a darkGreenTint, y Confused/Search
-    // quedan en puntos intermedios entre ambos (ver las properties InitialColor/EngageColor/etc.
-    // más abajo, que son las que de verdad se usan en el resto de la clase).
-    private Color baseInitialColor = new Color(160f / 255f, 0f / 255f, 211f / 255f); // Color de luz cuando está patrullando
-    private Color baseEngageColor = Color.red;
-    private Color baseSearchColor = Color.gray; // Color al que se apaga la luz durante Searching
-    private Color baseConfusedColor = new Color(160f / 255f, 0f / 255f, 211f / 255f); // Color al que vira la luz durante Confused
-    private Color windupStartColor; // Color de luz al entrar en Windup (varía según de dónde venga)
-    private Color stunStartColor; // Color de luz al entrar en Stunned (varía según de dónde venga)
-
-    [Header("Tinte verde por parry (colores de luz)")]
-    [SerializeField]
-    private Color lightGreenTint = new Color(0.65f, 1f, 0.55f); // color de Patrolling en maxParryTintStacks
-    [SerializeField]
-    private Color darkGreenTint = new Color(0.05f, 0.25f, 0.05f); // color de Chase en maxParryTintStacks
-
-    // Las que realmente se usan en el resto de la clase: lerpean desde el color base hacia el
-    // tono de verde que le corresponde a cada estado, según ParryTintProgress (0 = sin parries).
-    Color InitialColor => Color.Lerp(baseInitialColor, lightGreenTint, ParryTintProgress);
-    Color EngageColor => Color.Lerp(baseEngageColor, darkGreenTint, ParryTintProgress);
-    Color SearchColor => Color.Lerp(baseSearchColor, Color.Lerp(lightGreenTint, darkGreenTint, 2f / 3f), ParryTintProgress);
-    Color ConfusedColor => Color.Lerp(baseConfusedColor, Color.Lerp(lightGreenTint, darkGreenTint, 1f / 3f), ParryTintProgress);
+    // viven en EnemyFacingSprite, que también es quien maneja el halo emissive de niebla por
+    // distancia (ver EnemyFacingSprite.UpdateGlow), reemplazando a la luz real que tenía antes
+    // (delataba al enemigo desde lejos al iluminar el entorno a su alrededor).
+    private EnemyFacingSprite facingSprite;
 
     // Estado público (consultado por otros scripts, ej. HideOut)
     public bool InChase
@@ -326,11 +308,7 @@ public class EnemyController : MonoBehaviour
 
         baseSpeed = enemyAgent.speed;
 
-        EnemyLight = GetComponent<Light>();
-        originalLightRange = EnemyLight.range;
-        originalLightIntensity = EnemyLight.intensity;
-
-        //facingSprite = GetComponent<EnemyFacingSprite>();
+        facingSprite = GetComponent<EnemyFacingSprite>();
 
         if (enemyAudioSource == null) enemyAudioSource = GetComponent<AudioSource>();
         if (enemyAudioSource == null) enemyAudioSource = gameObject.AddComponent<AudioSource>();
@@ -359,12 +337,27 @@ public class EnemyController : MonoBehaviour
         idleaudioSource.minDistance = 1f;
         idleaudioSource.maxDistance = 35f;
 
+        // Siempre se crea un AudioSource nuevo (nunca GetComponent primero): a diferencia de
+        // enemyAudioSource/idleaudioSource, este necesita su propio minDistance/maxDistance/rolloff
+        // tunados para el efecto de proximidad, y no debe terminar compartiendo el mismo AudioSource
+        // que esos otros dos (los pisaría con su propia configuración, y viceversa).
+        if (proximityAudioSource == null) proximityAudioSource = gameObject.AddComponent<AudioSource>();
+        proximityAudioSource.clip = AudioManager.GetClip(AudioClipName.ProximitySound);
+        proximityAudioSource.playOnAwake = false;
+        proximityAudioSource.loop = true;
+        proximityAudioSource.spatialBlend = 1f;
+        proximityAudioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        proximityAudioSource.minDistance = proximityMinDistance;
+        proximityAudioSource.maxDistance = proximityMaxDistance;
+        proximityAudioSource.volume = AudioManager.GetMixedVolume(AudioClipName.ProximitySound, AudioChannel.Game);
+        proximityAudioSource.Play();
+
         GotoNextPoint();
     }
 
     void PlaySound(AudioClipName clip)
     {
-        enemyAudioSource.PlayOneShot(AudioManager.GetClip(clip), AudioManager.GetChannelVolume(AudioChannel.Game));
+        enemyAudioSource.PlayOneShot(AudioManager.GetClip(clip), AudioManager.GetMixedVolume(clip, AudioChannel.Game, chaseBoost: InChase));
     }
 
     // Reparte todos los PatrolWaypoint de la escena entre los enemigos por cercanía: cada
@@ -406,23 +399,17 @@ public class EnemyController : MonoBehaviour
     // (visible a través de paredes) del sprite forward/backward que esté activo en ese momento.
     void UpdateHighlight()
     {
-        //facingSprite.SetHighlighted(playerHandler.Crouching);
-    }
-
-    // Aumento visual puro: el rango Y la intensidad de la luz crecen, en la misma proporción,
-    // con el mismo porcentaje por parry que closeRangeDistance/hearingRange. Independiente
-    // del color, así que corre siempre, sin importar el estado.
-    void UpdateParryLightScale()
-    {
-        float scale = 1f + rangeIncreasePerParry * parryCount;
-        EnemyLight.range = originalLightRange * scale;
-        EnemyLight.intensity = originalLightIntensity * scale;
+        facingSprite.SetHighlighted(playerHandler.Crouching);
     }
 
     void Update()
     {
         UpdateHighlight();
-        UpdateParryLightScale();
+
+        // Vive fuera del switch: suena en cualquier estado, no solo en chase (ver Header
+        // "Sonido de proximidad"). Solo se refresca el volumen "base"; la caída real por
+        // distancia la aplica Unity solo (minDistance/maxDistance, ver Awake()).
+        proximityAudioSource.volume = AudioManager.GetMixedVolume(AudioClipName.ProximitySound, AudioChannel.Game);
 
         switch (state)
         {
@@ -497,8 +484,6 @@ public class EnemyController : MonoBehaviour
 
     void UpdatePatrolling()
     {
-        EnemyLight.color = InitialColor;
-
         if (CanSeePlayer(viewDistance, fieldOfView, out _))
         {
             EnterWindup();
@@ -516,7 +501,7 @@ public class EnemyController : MonoBehaviour
         idleSoundTimer -= Time.deltaTime;
         if (idleSoundTimer <= 0f)
         {
-            float volume = AudioManager.GetChannelVolume(AudioChannel.Game) * VolumeScale;
+            float volume = AudioManager.GetMixedVolume(idleClip, AudioChannel.Game) * VolumeScale;
             idleaudioSource.PlayOneShot(AudioManager.GetClip(idleClip), volume);
             //PlaySound(AudioClipName.BS_Enemy1Idle);
             idleSoundTimer = Random.Range(idleSoundMinInterval, idleSoundMaxInterval);
@@ -527,7 +512,6 @@ public class EnemyController : MonoBehaviour
     {
         state = EnemyState.Windup;
         stateTimer = windupDuration;
-        windupStartColor = EnemyLight.color;
 
         enemyAgent.isStopped = true;
         enemyAgent.velocity = Vector3.zero;
@@ -538,10 +522,6 @@ public class EnemyController : MonoBehaviour
 
     void UpdateWindup()
     {
-        // La luz vira gradualmente hacia rojo, partiendo del color que tuviera al entrar
-        float colorProgress = windupDuration > 0f ? Mathf.Clamp01(1f - stateTimer / windupDuration) : 1f;
-        EnemyLight.color = Color.Lerp(windupStartColor, EngageColor, colorProgress);
-
         // Gira hacia el jugador
         Vector3 toPlayer = player.transform.position - transform.position;
         toPlayer.y = 0f;
@@ -600,8 +580,6 @@ public class EnemyController : MonoBehaviour
 
     void UpdateChasing()
     {
-        EnemyLight.color = EngageColor;
-
         float alertViewDistance = viewDistance * chaseMultiplier; // Aumenta la distancia de detección
 
         if (CanSeePlayerWhileEngaged(alertViewDistance, fieldOfView, out Vector3 seenPosition))
@@ -673,15 +651,10 @@ public class EnemyController : MonoBehaviour
 
         if (CanSeePlayerWhileEngaged(alertViewDistance, fieldOfView, out Vector3 seenPosition))
         {
-            EnemyLight.color = EngageColor;
             EnterChasing();
             lastKnownPlayerPosition = seenPosition;
             return;
         }
-
-        // La luz se apaga lentamente hacia gris a medida que se pierde la esperanza de encontrar al jugador
-        float colorProgress = stateDurationTotal > 0f ? Mathf.Clamp01(1f - stateTimer / stateDurationTotal) : 1f;
-        EnemyLight.color = Color.Lerp(EngageColor, SearchColor, colorProgress);
 
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
@@ -725,15 +698,10 @@ public class EnemyController : MonoBehaviour
 
         if (CanSeePlayerWhileEngaged(alertViewDistance, fieldOfView, out Vector3 seenPosition))
         {
-            // El windup se encarga de virar la luz rápidamente a rojo
             lastKnownPlayerPosition = seenPosition;
             EnterWindup();
             return;
         }
-
-        // La luz pasa de gris a azul mientras el enemigo sigue confundido
-        float colorProgress = stateDurationTotal > 0f ? Mathf.Clamp01(1f - stateTimer / stateDurationTotal) : 1f;
-        EnemyLight.color = Color.Lerp(SearchColor, ConfusedColor, colorProgress);
 
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
@@ -751,8 +719,6 @@ public class EnemyController : MonoBehaviour
         enemyAgent.updateRotation = true;
         enemyAgent.speed = EffectiveBaseSpeed;
 
-        EnemyLight.color = InitialColor;
-
         StopChaseAudio();
 
         GotoNextPoint();
@@ -763,11 +729,9 @@ public class EnemyController : MonoBehaviour
     public void Parry(Vector3 knockbackDirection)
     {
         parryCount++;
-        //facingSprite.SetParryTint(ParryTintProgress);
 
         state = EnemyState.Stunned;
         stateTimer = stunDuration;
-        stunStartColor = EnemyLight.color;
 
         AudioManager.RegisterParry();
         PlaySound(AudioClipName.Parry);
@@ -817,28 +781,6 @@ public class EnemyController : MonoBehaviour
 
     void UpdateStunned()
     {
-        // La luz funde a negro al entrar y funde de vuelta a rojo al salir,
-        // sin solaparse aunque el aturdimiento dure poco.
-        float transitionDuration = Mathf.Min(stunColorTransitionDuration, stunDuration * 0.5f);
-        float elapsed = stunDuration - stateTimer;
-
-        if (transitionDuration <= 0f)
-        {
-            EnemyLight.color = Color.black;
-        }
-        else if (elapsed < transitionDuration)
-        {
-            EnemyLight.color = Color.Lerp(stunStartColor, Color.black, elapsed / transitionDuration);
-        }
-        else if (stateTimer < transitionDuration)
-        {
-            EnemyLight.color = Color.Lerp(Color.black, EngageColor, 1f - stateTimer / transitionDuration);
-        }
-        else
-        {
-            EnemyLight.color = Color.black;
-        }
-
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
         {
@@ -884,8 +826,6 @@ public class EnemyController : MonoBehaviour
 
     void UpdateForceApproach()
     {
-        EnemyLight.color = EngageColor;
-
         float distance = Vector3.Distance(transform.position, forceApproachTarget);
         if (distance <= forceApproachArrivalDistance)
         {

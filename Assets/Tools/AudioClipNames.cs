@@ -28,4 +28,5 @@ public enum AudioClipName
     React3,
     Parry,
     Comeback,
+    ProximitySound,
 }

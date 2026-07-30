@@ -114,6 +114,13 @@ public class PlayerHandler : MonoBehaviour
     private float currentHealth;
     private bool isDead;
 
+    // Regeneración: si pasa healthRegenDelay desde el último golpe sin recibir daño nuevo, la
+    // vida se regenera sola hasta el máximo (a healthRegenRate por segundo). Al subir
+    // currentHealth, UpdateHealthVisuals() ya se encarga de que las viñetas y el tinte rojizo
+    // se vayan desvaneciendo solos, en la misma proporción.
+    [SerializeField] private float healthRegenDelay = 5f;
+    [SerializeField] private float healthRegenRate = 10f;
+
     // El sonido de daño (BS_Damage) es un loop: se corta si no llega daño nuevo por este
     // margen, ya que TakeDamage se llama en ticks de física discretos, no de forma continua.
     [SerializeField] private float damageLoopStopDelay = 8f;
@@ -326,6 +333,7 @@ public class PlayerHandler : MonoBehaviour
         UpdateActionBar();
         UpdateParryLabel();
         UpdateDamageAudio();
+        UpdateHealthRegen();
         UpdatePlayerLight();
 
         // revisa si puede enseñar el marcador del objetivo
@@ -632,6 +640,17 @@ public class PlayerHandler : MonoBehaviour
         {
             AudioManager.StopDamage();
         }
+    }
+
+    // Ver comentario del campo healthRegenDelay: regenera sola pasado ese tiempo sin daño nuevo.
+    private void UpdateHealthRegen()
+    {
+        if (isDead || currentHealth >= maxHealth) return;
+        if (Time.time - lastDamageTime < healthRegenDelay) return;
+
+        currentHealth = Mathf.Min(maxHealth, currentHealth + healthRegenRate * Time.deltaTime);
+        EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
+        UpdateHealthVisuals();
     }
 
     // Viñetas: invisibles a 100 HP, totalmente visibles a 0 HP (lineal).

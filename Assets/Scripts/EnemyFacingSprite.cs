@@ -13,6 +13,18 @@ public class EnemyFacingSprite : MonoBehaviour
     [SerializeField] private Color highlightColor = new Color(1f, 0.85f, 0.2f, 0.6f);
     [SerializeField] private float highlightScale = 1.15f;
 
+    // Reemplaza a la luz real que tenía el enemigo (delataba su posición a distancia porque
+    // iluminaba el entorno a su alrededor). El sprite usa Custom/EnemyCamouflageNoise: en vez de
+    // brillar, se camufla con ruido tipo estática (mismo principio que el pixelado ya usado en la
+    // cámara principal, ver Assets/Materials/PixelCamera.renderTexture) — solo a distancias
+    // realmente lejanas empieza a aparecer ruido; dentro de clearDistance se dibuja tal cual es,
+    // sin ningún ruido.
+    [Header("Camuflaje por distancia")]
+    [SerializeField] private float clearDistance = 10f; // dentro de este radio, sprite 100% nítido (sin ruido)
+    [SerializeField] private float obscuredDistance = 28f; // más allá de esto, ruido a su tope (ver _MaxNoiseAmount en el shader)
+
+    private Material noiseMaterial;
+
     private Transform cameraTransform;
     private bool showingForward;
 
@@ -28,19 +40,56 @@ public class EnemyFacingSprite : MonoBehaviour
         forwardRenderer = forwardSprite.GetComponent<SpriteRenderer>();
         backwardRenderer = backwardSprite.GetComponent<SpriteRenderer>();
 
+        // Una sola instancia de material compartida por ambos renderers: forward/backward nunca
+        // están activos a la vez (ver SetFacing), así que no hay conflicto en pisar la misma
+        // propiedad _Clarity cuadro a cuadro.
+        noiseMaterial = new Material(Shader.Find("Custom/EnemyCamouflageNoise"));
+        forwardRenderer.material = noiseMaterial;
+        backwardRenderer.material = noiseMaterial;
+
         forwardHighlight = CreateHighlightRenderer(forwardRenderer);
         backwardHighlight = CreateHighlightRenderer(backwardRenderer);
 
         SetFacing(true);
     }
 
+    void Update()
+    {
+        UpdateCamouflage();
+    }
+
+    // Margen alrededor del cruce de 90° (dot == 0) entre mostrar el sprite forward/backward.
+    // Cerca del enemigo, un movimiento lateral chico del jugador ya representa un cambio angular
+    // grande (el ángulo relativo escala con distancia lateral / distancia al enemigo), así que sin
+    // este margen el dot cruza 0 varias veces por segundo y el sprite parpadea entre ambas caras.
+    [SerializeField] private float facingHysteresis = 0.15f;
+
     void FixedUpdate()
     {
-        Vector3 toCamera = cameraTransform.position - transform.position;
-        bool cameraSeesFront = Vector3.Dot(transform.forward, toCamera) > 0f;
+        Vector3 toCamera = (cameraTransform.position - transform.position).normalized;
+        float facingDot = Vector3.Dot(transform.forward, toCamera);
 
-        if (cameraSeesFront != showingForward)
-            SetFacing(cameraSeesFront);
+        // Solo cambia de cara al cruzar claramente hacia el otro lado; dentro del margen se
+        // mantiene la cara actual, así que el cruce exacto de 90° no causa parpadeo.
+        if (showingForward && facingDot < -facingHysteresis)
+        {
+            SetFacing(false);
+        }
+        else if (!showingForward && facingDot > facingHysteresis)
+        {
+            SetFacing(true);
+        }
+    }
+
+    // Camuflaje por distancia: cuanto más lejos esté la cámara, más ruido cubre al sprite (0 =
+    // puro ruido, el enemigo se pierde); cerca, el ruido desaparece y se ve nítido (1).
+    void UpdateCamouflage()
+    {
+        float distance = Vector3.Distance(transform.position, cameraTransform.position);
+        float range = Mathf.Max(0.01f, obscuredDistance - clearDistance); // evita división por cero si se configuran mal en el Inspector
+        float clarity = Mathf.Clamp01(1f - (distance - clearDistance) / range);
+
+        noiseMaterial.SetFloat("_Clarity", clarity);
     }
 
     private void SetFacing(bool front)
@@ -77,15 +126,5 @@ public class EnemyFacingSprite : MonoBehaviour
     {
         forwardHighlight.enabled = highlighted;
         backwardHighlight.enabled = highlighted;
-    }
-
-    // Llamado por EnemyController.Parry(): tiñe el sprite real hacia verde según qué tan
-    // parriado esté el enemigo (0 = color normal, 1 = verde completo). No afecta a la
-    // silueta de resalte, que tiene su propio color (highlightColor) independiente.
-    public void SetParryTint(float progress)
-    {
-        Color tint = Color.Lerp(Color.white, Color.green, Mathf.Clamp01(progress));
-        forwardRenderer.color = tint;
-        backwardRenderer.color = tint;
     }
 }
