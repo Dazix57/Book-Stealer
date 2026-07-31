@@ -141,7 +141,7 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private float crouchStaminaDuration = 6f; // segundos de agache continuo hasta vaciar el medidor
     [SerializeField] private float crouchStaminaRegenRate = 0.2f; // fracción del medidor por segundo mientras no se está agachado
     [SerializeField] private float crouchStaminaDepletionCooldown = 3f; // tras vaciarse del todo, no se puede volver a agachar durante este tiempo
-    [SerializeField] private UnityEngine.UI.Image crouchBar; // Resistencia restante para agacharse (Image.fillAmount, sprite "bar")
+    [SerializeField] private UnityEngine.UI.Slider crouchBar; // Resistencia restante para agacharse
     private float crouchStaminaMeter = 1f; // 1 = lleno, 0 = vacío (forzado a pararse)
     private float crouchStaminaRegenCooldownTimer = 0f;
     private bool isSprinting = false;
@@ -151,7 +151,7 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private float staminaRegenRate = 0.15f; // fracción del medidor por segundo mientras no se está corriendo
     [SerializeField] private float movingStaminaRegenMultiplier = 0.5f; // la regen se reduce a esta fracción mientras el jugador se mueve
     [SerializeField] private float staminaDepletionCooldown = 5f; // tras vaciarse del todo, no regenera nada durante este tiempo
-    [SerializeField] private UnityEngine.UI.Image sprintBar; // resistencia restante de sprint (Image.fillAmount, sprite "bar")
+    [SerializeField] private UnityEngine.UI.Slider sprintBar; // resistencia restante de sprint
     private float staminaMeter = 1f; // 1 = lleno, 0 = vacío
     private float staminaRegenCooldownTimer = 0f;
 
@@ -300,12 +300,12 @@ public class PlayerHandler : MonoBehaviour
 
         if (sprintBar != null)
         {
-            sprintBar.fillAmount = staminaMeter;
+            sprintBar.value = staminaMeter;
         }
 
         if (crouchBar != null)
         {
-            crouchBar.fillAmount = 1f;
+            crouchBar.value = 1f;
         }
 
         // El ActionBar arranca invisible: solo se muestra mientras se para o se está escondido
@@ -713,7 +713,7 @@ public class PlayerHandler : MonoBehaviour
 
         if (crouchBar != null)
         {
-            crouchBar.fillAmount = crouchStaminaMeter;
+            crouchBar.value = crouchStaminaMeter;
         }
     }
 
@@ -748,7 +748,7 @@ public class PlayerHandler : MonoBehaviour
 
         if (sprintBar != null)
         {
-            sprintBar.fillAmount = staminaMeter;
+            sprintBar.value = staminaMeter;
         }
     }
 
