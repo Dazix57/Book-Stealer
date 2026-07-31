@@ -33,12 +33,10 @@ public class HideOut : MonoBehaviour
     [SerializeField]
     private float forceExtractionRangeIncreasePerParry = 0.1f;
 
-    // Anti-cheese: pasado este tiempo escondido sin interrupción, el jugador empieza a perder
-    // vida (para que esconderse no sea una estrategia segura indefinidamente).
+    // Anti-cheese: pasado este tiempo escondido sin interrupción, se fuerza la salida del
+    // escondite (para que esconderse no sea una estrategia segura indefinidamente).
     [SerializeField]
     private float hideCheeseGraceDuration = 10f;
-    [SerializeField]
-    private float hideCheeseDamagePerSecond = 15f;
     private float hiddenTimer = 0f;
 
     private bool inRange = false;
@@ -74,12 +72,12 @@ public class HideOut : MonoBehaviour
             }
         }
 
-        UpdateHideCheeseDamage();
+        UpdateHideCheeseTimer();
     }
 
-    // Anti-cheese: mientras siga escondido más allá de hideCheeseGraceDuration, empieza a
-    // perder vida cada frame (hideCheeseDamagePerSecond repartido por Time.deltaTime).
-    void UpdateHideCheeseDamage()
+    // Anti-cheese: en cuanto sigue escondido más allá de hideCheeseGraceDuration, se lo
+    // expulsa del escondite (ver ForceExtractPlayer) en vez de dejarlo esconderse indefinidamente.
+    void UpdateHideCheeseTimer()
     {
         if (!isHidden)
         {
@@ -96,9 +94,9 @@ public class HideOut : MonoBehaviour
             playerHandler.SetHideActionBar(normalizedRemaining);
         }
 
-        if (hiddenTimer > hideCheeseGraceDuration && playerHandler != null)
+        if (hiddenTimer > hideCheeseGraceDuration)
         {
-            playerHandler.ApplyDamage(hideCheeseDamagePerSecond * Time.deltaTime);
+            ForceExtractPlayer();
         }
     }
 

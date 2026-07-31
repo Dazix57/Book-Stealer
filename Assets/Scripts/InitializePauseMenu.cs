@@ -46,9 +46,14 @@ public class InitializePauseMenu : MonoBehaviour
     // panel de confirmación, ya que ambas comparten el mismo Yes/No.
     private MenuOptionsEnum pendingConfirmation;
 
-    // Navegación por teclado dentro de Settings: fila 0 = volumen UI, 1 = volumen juego, 2 = Back.
+    // Navegación por teclado dentro de Settings: fila 0 = volumen UI, 1 = volumen juego,
+    // 2 = sensibilidad de mouse, 3 = Back.
     private UnityEngine.UI.Slider uiVolumeSlider;
     private UnityEngine.UI.Slider gameVolumeSlider;
+    private UnityEngine.UI.Slider mouseSensitivitySlider;
+    // Mismo orden que settingsTexts (sin contar la fila Back, que no es un slider): permite
+    // indexar por settingsIndex en vez de encadenar ternarios por cada fila nueva.
+    private UnityEngine.UI.Slider[] settingsSliders;
     private TextMeshProUGUI[] settingsTexts;
     private int settingsIndex = 0;
     private const float settingsVolumeStep = 0.1f;
@@ -370,9 +375,13 @@ public class InitializePauseMenu : MonoBehaviour
     {
         uiVolumeSlider = settingsPanel.transform.Find("UIVolumeSlider").GetComponent<UnityEngine.UI.Slider>();
         gameVolumeSlider = settingsPanel.transform.Find("GameVolumeSlider").GetComponent<UnityEngine.UI.Slider>();
+        mouseSensitivitySlider = settingsPanel.transform.Find("MouseSensitivitySlider").GetComponent<UnityEngine.UI.Slider>();
 
         uiVolumeSlider.onValueChanged.AddListener(AudioManager.SetUIVolume);
         gameVolumeSlider.onValueChanged.AddListener(AudioManager.SetGameVolume);
+        mouseSensitivitySlider.onValueChanged.AddListener(MouseSettings.SetSensitivity);
+
+        settingsSliders = new UnityEngine.UI.Slider[] { uiVolumeSlider, gameVolumeSlider, mouseSensitivitySlider };
 
         UnityEngine.UI.Button backButton = settingsPanel.transform.Find("BackButton").GetComponent<UnityEngine.UI.Button>();
         backButton.onClick.AddListener(OnSettingsBackConfirmed);
@@ -388,11 +397,12 @@ public class InitializePauseMenu : MonoBehaviour
         });
         trigger.triggers.Add(hoverEntry);
 
-        // Textos resaltables para la navegación por teclado: fila UI, fila Juego, Back.
+        // Textos resaltables para la navegación por teclado: fila UI, fila Juego, fila Sensibilidad, Back.
         settingsTexts = new TextMeshProUGUI[]
         {
             settingsPanel.transform.Find("UIVolumeLabel").GetComponent<TextMeshProUGUI>(),
             settingsPanel.transform.Find("GameVolumeLabel").GetComponent<TextMeshProUGUI>(),
+            settingsPanel.transform.Find("MouseSensitivityLabel").GetComponent<TextMeshProUGUI>(),
             settingsPanel.transform.Find("BackButton/Back").GetComponent<TextMeshProUGUI>()
         };
     }
@@ -403,9 +413,10 @@ public class InitializePauseMenu : MonoBehaviour
         mainPanel.SetActive(false);
         settingsPanel.SetActive(true);
 
-        // Refleja el volumen persistido cada vez que se abre, por si cambió desde otra escena.
+        // Refleja los valores persistidos cada vez que se abre, por si cambiaron desde otra escena.
         uiVolumeSlider.value = AudioManager.UIVolume;
         gameVolumeSlider.value = AudioManager.GameVolume;
+        mouseSensitivitySlider.value = MouseSettings.Sensitivity;
 
         settingsIndex = 0;
         HighlightSettingsIndex();
@@ -448,19 +459,20 @@ public class InitializePauseMenu : MonoBehaviour
             AudioManager.Play(AudioClipName.ButtonSelectionSound, AudioChannel.UI);
         }
 
-        bool onVolumeRow = settingsIndex == 0 || settingsIndex == 1;
+        bool onSliderRow = settingsIndex < settingsSliders.Length;
 
-        if (onVolumeRow)
+        if (onSliderRow)
         {
-            UnityEngine.UI.Slider slider = settingsIndex == 0 ? uiVolumeSlider : gameVolumeSlider;
+            UnityEngine.UI.Slider slider = settingsSliders[settingsIndex];
 
+            // Clamp contra el rango propio del slider (no siempre 0-1, ej. sensibilidad de mouse).
             if (Keyboard.current.aKey.wasPressedThisFrame)
             {
-                slider.value = Mathf.Clamp01(slider.value - settingsVolumeStep);
+                slider.value = Mathf.Clamp(slider.value - settingsVolumeStep, slider.minValue, slider.maxValue);
             }
             else if (Keyboard.current.dKey.wasPressedThisFrame)
             {
-                slider.value = Mathf.Clamp01(slider.value + settingsVolumeStep);
+                slider.value = Mathf.Clamp(slider.value + settingsVolumeStep, slider.minValue, slider.maxValue);
             }
         }
         else if (Keyboard.current.enterKey.wasPressedThisFrame)

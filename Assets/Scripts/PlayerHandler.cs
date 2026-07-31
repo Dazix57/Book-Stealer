@@ -80,6 +80,11 @@ public class PlayerHandler : MonoBehaviour
     // mientras isHidden es true; UpdateActionBar() la controla el resto del tiempo.
     [SerializeField] private UnityEngine.UI.Slider actionBar;
 
+    // Etiqueta mostrada junto al actionBar únicamente mientras se usa para el temporizador de
+    // escondite (no durante el parry, que no la necesita): la controla HideOut vía
+    // SetHideActionBar/HideActionBar, igual que el propio actionBar.
+    [SerializeField] private TextMeshProUGUI hideoutTimerLabel;
+
     // Posición base de la cámara (antes de aplicar el descenso al agacharse y el shake de persecución)
     private Vector3 cameraDefaultLocalPosition;
 
@@ -245,7 +250,7 @@ public class PlayerHandler : MonoBehaviour
 
         // Evita que la física rote el personaje al chocar contra otros objetos
         rb.constraints = RigidbodyConstraints.FreezeRotation;
-        mouseSensitivity = 0.7f;
+        mouseSensitivity = MouseSettings.Sensitivity;
         speed = 6f;
         collider = GetComponent<BoxCollider>();
         rb.linearDamping = 10f;
@@ -528,6 +533,8 @@ public class PlayerHandler : MonoBehaviour
 
         actionBar.gameObject.SetActive(true);
         actionBar.value = Mathf.Clamp01(normalizedRemaining);
+
+        if (hideoutTimerLabel != null) hideoutTimerLabel.gameObject.SetActive(true);
     }
 
     // Consultado por HideOut al salir del escondite, para ocultar de nuevo el ActionBar
@@ -536,6 +543,8 @@ public class PlayerHandler : MonoBehaviour
         if (actionBar == null) return;
 
         actionBar.gameObject.SetActive(false);
+
+        if (hideoutTimerLabel != null) hideoutTimerLabel.gameObject.SetActive(false);
     }
 
     private void UpdateParryLabel()
@@ -558,7 +567,7 @@ public class PlayerHandler : MonoBehaviour
         }
         else
         {
-            parryLabel.text = "Parry";
+            parryLabel.text = "Parry (Press F)";
         }
         parryLabel.color = parryLabelOriginalColor;
     }
