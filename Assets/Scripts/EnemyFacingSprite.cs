@@ -20,10 +20,14 @@ public class EnemyFacingSprite : MonoBehaviour
     // realmente lejanas empieza a aparecer ruido; dentro de clearDistance se dibuja tal cual es,
     // sin ningún ruido.
     [Header("Camuflaje por distancia")]
-    [SerializeField] private float clearDistance = 10f; // dentro de este radio, sprite 100% nítido (sin ruido)
+    [SerializeField] private float clearDistance = 20f; // dentro de este radio, sprite 100% nítido (sin ruido)
     [SerializeField] private float obscuredDistance = 28f; // más allá de esto, ruido a su tope (ver _MaxNoiseAmount en el shader)
 
-    private Material noiseMaterial;
+    // Instancia propia por renderer (en vez de una sola compartida): así queda garantizado que
+    // ambas caras reciben el mismo _Clarity todos los frames, sin depender de que Unity trate un
+    // Material asignado a dos SpriteRenderer distintos como realmente equivalente en todo momento.
+    private Material forwardMaterial;
+    private Material backwardMaterial;
 
     private Transform cameraTransform;
     private bool showingForward;
@@ -40,12 +44,11 @@ public class EnemyFacingSprite : MonoBehaviour
         forwardRenderer = forwardSprite.GetComponent<SpriteRenderer>();
         backwardRenderer = backwardSprite.GetComponent<SpriteRenderer>();
 
-        // Una sola instancia de material compartida por ambos renderers: forward/backward nunca
-        // están activos a la vez (ver SetFacing), así que no hay conflicto en pisar la misma
-        // propiedad _Clarity cuadro a cuadro.
-        noiseMaterial = new Material(Shader.Find("Custom/EnemyCamouflageNoise"));
-        forwardRenderer.material = noiseMaterial;
-        backwardRenderer.material = noiseMaterial;
+        Shader noiseShader = Shader.Find("Custom/EnemyCamouflageNoise");
+        forwardMaterial = new Material(noiseShader);
+        backwardMaterial = new Material(noiseShader);
+        forwardRenderer.material = forwardMaterial;
+        backwardRenderer.material = backwardMaterial;
 
         forwardHighlight = CreateHighlightRenderer(forwardRenderer);
         backwardHighlight = CreateHighlightRenderer(backwardRenderer);
@@ -62,10 +65,18 @@ public class EnemyFacingSprite : MonoBehaviour
     // Cerca del enemigo, un movimiento lateral chico del jugador ya representa un cambio angular
     // grande (el ángulo relativo escala con distancia lateral / distancia al enemigo), así que sin
     // este margen el dot cruza 0 varias veces por segundo y el sprite parpadea entre ambas caras.
-    [SerializeField] private float facingHysteresis = 0.15f;
+    [SerializeField] private float facingHysteresis = 0.35f;
+
+    // Segunda red de seguridad, independiente del margen de arriba: por más ruido angular que
+    // haya (steering del NavMeshAgent, etc.), nunca se permite más de un cambio de cara dentro
+    // de esta ventana de tiempo, así que un parpadeo rápido queda descartado de raíz.
+    [SerializeField] private float minFacingSwitchInterval = 0.2f;
+    private float lastFacingSwitchTime = float.NegativeInfinity;
 
     void FixedUpdate()
     {
+        if (Time.time - lastFacingSwitchTime < minFacingSwitchInterval) return;
+
         Vector3 toCamera = (cameraTransform.position - transform.position).normalized;
         float facingDot = Vector3.Dot(transform.forward, toCamera);
 
@@ -74,10 +85,12 @@ public class EnemyFacingSprite : MonoBehaviour
         if (showingForward && facingDot < -facingHysteresis)
         {
             SetFacing(false);
+            lastFacingSwitchTime = Time.time;
         }
         else if (!showingForward && facingDot > facingHysteresis)
         {
             SetFacing(true);
+            lastFacingSwitchTime = Time.time;
         }
     }
 
@@ -89,7 +102,8 @@ public class EnemyFacingSprite : MonoBehaviour
         float range = Mathf.Max(0.01f, obscuredDistance - clearDistance); // evita división por cero si se configuran mal en el Inspector
         float clarity = Mathf.Clamp01(1f - (distance - clearDistance) / range);
 
-        noiseMaterial.SetFloat("_Clarity", clarity);
+        forwardMaterial.SetFloat("_Clarity", clarity);
+        backwardMaterial.SetFloat("_Clarity", clarity);
     }
 
     private void SetFacing(bool front)

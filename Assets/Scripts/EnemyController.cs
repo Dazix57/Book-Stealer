@@ -298,6 +298,18 @@ public class EnemyController : MonoBehaviour
         enemyAgent.speed = 5.33f; //Accounts for acceleration
         enemyAgent.acceleration = 100f;
 
+        // El Rigidbody nunca quedó protegido de la física (a diferencia del jugador, ver
+        // PlayerHandler.Awake): sin esto, el contacto con el NavMesh o con el jugador puede
+        // aplicarle un torque mínimo que hace vibrar transform.rotation. Toda la rotación real
+        // ya la maneja el NavMeshAgent (updateRotation) o asignaciones directas a transform.
+        // rotation (Windup/Confused), nunca física — así que congelarla del todo es seguro y
+        // elimina esa fuente de ruido angular (que hacía parpadear el sprite forward/backward).
+        Rigidbody enemyRigidbody = GetComponent<Rigidbody>();
+        if (enemyRigidbody != null)
+        {
+            enemyRigidbody.constraints = RigidbodyConstraints.FreezeRotation;
+        }
+
         //collider = GetComponent<CapsuleCollider>();
 
         // Set values
