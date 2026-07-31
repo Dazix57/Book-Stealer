@@ -145,6 +145,8 @@ public static class AudioManager
 
         audioClips.Add(AudioClipName.MenuTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.MenuTheme.ToString()));
         audioClips.Add(AudioClipName.StartMusic, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.StartMusic.ToString()));
+        // El archivo no sigue la convención "NombreDelEnum.ext" (mismo caso que KeyPickUpSound/DoorOpenSound).
+        audioClips.Add(AudioClipName.JumpscareDeathSound, Resources.Load<AudioClip>("SoundEffects/jumpScare01"));
         audioClips.Add(AudioClipName.GameplayTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.GameplayTheme.ToString()));
 
         audioClips.Add(AudioClipName.BS_Ambience1, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience1.ToString()));
@@ -175,6 +177,7 @@ public static class AudioManager
             case AudioClipName.React2:
             case AudioClipName.React3:
             case AudioClipName.Parry:
+            case AudioClipName.JumpscareDeathSound:
                 return 0.9f;
             case AudioClipName.ProximitySound:
                 return 0.85f; // duro cuando el jugador está cerca, pero por debajo de reacciones/chase para no reventar

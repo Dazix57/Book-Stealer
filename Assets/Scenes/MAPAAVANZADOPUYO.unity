@@ -248278,10 +248278,6 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1042600479040901526, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1948276442470024936, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -248297,10 +248293,6 @@ PrefabInstance:
     - target: {fileID: 2738270310269194919, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: near clip plane
       value: 0.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 3238949486368922257, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3414877654275047766, guid: b1c2ddf0de9e01f429182e1982d51f6a, type: 3}
       propertyPath: m_Name

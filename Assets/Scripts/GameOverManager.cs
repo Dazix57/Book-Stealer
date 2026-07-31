@@ -34,6 +34,7 @@ public class GameOverManager : MonoBehaviour
 
     private void HandlePlayerDeath()
     {
+        AudioManager.Play(AudioClipName.JumpscareDeathSound, AudioChannel.Game);
         StartCoroutine(PlayDeathFlashThenGameOver());
     }
 

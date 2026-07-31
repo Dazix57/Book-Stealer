@@ -473,4 +473,9 @@ public class InitializePauseMenu : MonoBehaviour
     {
         get {return isPausedMenuActive;}
     }
+
+    // El PauseMenu vive en su propio GameObject persistente (DontDestroyOnLoad), no en el
+    // Player, así que otros scripts (ej. PlayerHandler) no pueden usar GetComponent para
+    // encontrarlo: deben consultar este singleton estático en su lugar.
+    public static bool IsAnyPauseMenuActive => instance != null && instance.isPausedMenuActive;
 }

@@ -141,7 +141,7 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private float crouchStaminaDuration = 6f; // segundos de agache continuo hasta vaciar el medidor
     [SerializeField] private float crouchStaminaRegenRate = 0.2f; // fracción del medidor por segundo mientras no se está agachado
     [SerializeField] private float crouchStaminaDepletionCooldown = 3f; // tras vaciarse del todo, no se puede volver a agachar durante este tiempo
-    [SerializeField] private UnityEngine.UI.Slider crouchBar; // Resistencia restante para agacharse
+    [SerializeField] private UnityEngine.UI.Image crouchBar; // Resistencia restante para agacharse (Image.fillAmount, sprite "bar")
     private float crouchStaminaMeter = 1f; // 1 = lleno, 0 = vacío (forzado a pararse)
     private float crouchStaminaRegenCooldownTimer = 0f;
     private bool isSprinting = false;
@@ -151,7 +151,7 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private float staminaRegenRate = 0.15f; // fracción del medidor por segundo mientras no se está corriendo
     [SerializeField] private float movingStaminaRegenMultiplier = 0.5f; // la regen se reduce a esta fracción mientras el jugador se mueve
     [SerializeField] private float staminaDepletionCooldown = 5f; // tras vaciarse del todo, no regenera nada durante este tiempo
-    [SerializeField] private UnityEngine.UI.Slider sprintBar; // duración restante antes de que se acabe el sprint
+    [SerializeField] private UnityEngine.UI.Image sprintBar; // resistencia restante de sprint (Image.fillAmount, sprite "bar")
     private float staminaMeter = 1f; // 1 = lleno, 0 = vacío
     private float staminaRegenCooldownTimer = 0f;
 
@@ -300,12 +300,12 @@ public class PlayerHandler : MonoBehaviour
 
         if (sprintBar != null)
         {
-            sprintBar.value = staminaMeter;
+            sprintBar.fillAmount = staminaMeter;
         }
 
         if (crouchBar != null)
         {
-            crouchBar.value = 1f;
+            crouchBar.fillAmount = 1f;
         }
 
         // El ActionBar arranca invisible: solo se muestra mientras se para o se está escondido
@@ -323,8 +323,12 @@ public class PlayerHandler : MonoBehaviour
         // inicializar todas las referencias (ej. coolDownMessage, markerCooldown).
         if (!isInitialized) return;
 
-        // Deshabilita el player input si se esta en el menu de pausa
-        if (!GetComponent<InitializePauseMenu>().IsPausedMenuActive)
+        // Deshabilita el player input si se esta en el menu de pausa. El PauseMenu vive en su
+        // propio GameObject (no en el Player), así que se consulta por el singleton estático en
+        // vez de GetComponent (que siempre devolvía null aquí y tiraba una NullReferenceException
+        // cada frame, abortando el resto de Update() -- por eso las barras de stamina/agachado
+        // nunca se actualizaban más allá de su valor inicial de Awake()).
+        if (!InitializePauseMenu.IsAnyPauseMenuActive)
         {
             ReadInput();
         }
@@ -540,19 +544,21 @@ public class PlayerHandler : MonoBehaviour
 
         if (isParryActive)
         {
-            parryLabel.text = "[PARRYING]";
+            parryLabel.text = "Parrying";
             parryLabel.color = Color.red;
             return;
         }
 
+        // Mientras el parry esté en cooldown, se muestran los segundos restantes en vez de
+        // la palabra "Parry" (pedido explícito: el jugador debe ver cuánto falta, no un estado fijo).
         float remainingCooldown = ParryDebounce - Time.time;
         if (remainingCooldown > 0f)
         {
-            parryLabel.text = $"[PARRY]: {Mathf.CeilToInt(remainingCooldown)}s";
+            parryLabel.text = $"{Mathf.CeilToInt(remainingCooldown)}s";
         }
         else
         {
-            parryLabel.text = "[PARRY]: Ready";
+            parryLabel.text = "Parry";
         }
         parryLabel.color = parryLabelOriginalColor;
     }
@@ -707,7 +713,7 @@ public class PlayerHandler : MonoBehaviour
 
         if (crouchBar != null)
         {
-            crouchBar.value = crouchStaminaMeter;
+            crouchBar.fillAmount = crouchStaminaMeter;
         }
     }
 
@@ -742,7 +748,7 @@ public class PlayerHandler : MonoBehaviour
 
         if (sprintBar != null)
         {
-            sprintBar.value = staminaMeter;
+            sprintBar.fillAmount = staminaMeter;
         }
     }
 

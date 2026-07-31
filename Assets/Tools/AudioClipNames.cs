@@ -9,7 +9,6 @@ public enum AudioClipName
     ButtonSelectionSound,
     ButtonConfirmationSound,
     MenuTheme,
-    StartMusic,
     GameplayTheme,
     PickUpSound,
     KeyPickUpSound,
@@ -30,4 +29,10 @@ public enum AudioClipName
     Parry,
     Comeback,
     ProximitySound,
+    // Nuevos valores SIEMPRE al final: Unity serializa este enum por su valor entero (posición),
+    // no por nombre -- insertarlos en el medio corre el valor de todo lo que viene después,
+    // rompiendo silenciosamente cualquier campo ya serializado en un prefab (ver footstepClip
+    // en Player.prefab/Enemy01.prefab/Enemy02.prefab, e idleClip en los enemigos).
+    StartMusic,
+    JumpscareDeathSound,
 }

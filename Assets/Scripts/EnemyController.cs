@@ -331,9 +331,9 @@ public class EnemyController : MonoBehaviour
 
         // Set values
 
-        viewDistance = 11f;
+        viewDistance = 13f;
         fieldOfView = 75.0f;
-        chaseMultiplier = 2.25f;
+        chaseMultiplier = 2.6f; // Alcance de detección en alerta (viewDistance*chaseMultiplier): más ancho para que cueste más perderlo de vista una vez enganchado
 
         baseSpeed = enemyAgent.speed;
 

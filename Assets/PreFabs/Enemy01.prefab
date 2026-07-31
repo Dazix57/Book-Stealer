@@ -82,10 +82,10 @@ MonoBehaviour:
   closeRangeDistance: 15
   windupDuration: 0.5
   windupTurnSpeed: 720
-  searchMinDuration: 2.5
-  searchMaxDuration: 4
+  searchMinDuration: 4
+  searchMaxDuration: 6
   searchProjectionDistance: 30
-  confusedDuration: 2.8
+  confusedDuration: 4
   confusedSnapInterval: 0.4
   stunDuration: 5
   stunKnockbackDistance: 5
@@ -104,7 +104,7 @@ MonoBehaviour:
   idleSoundMaxInterval: 45
   idleaudioSource: {fileID: 0}
   idleClip: 16
-  searchChanceOnLoseSightBase: 0.5
+  searchChanceOnLoseSightBase: 0.7
   searchChanceIncreasePerParry: 0.1
   searchDurationMultiplierPerParry: 0.5
   confusedDurationMultiplierPerParry: 0.2
