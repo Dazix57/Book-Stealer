@@ -6,7 +6,6 @@ using UnityEngine.UI;
 using Unity.VisualScripting;
 using Unity.Mathematics;
 using TMPro;
-using Unity.AppUI.UI;
 
 public class PlayerHandler : MonoBehaviour
 {
@@ -26,6 +25,12 @@ public class PlayerHandler : MonoBehaviour
     private float mouseY;
     private float yaw; // Rotación acumulada en el eje Y (horizontal), aplicada al Rigidbody
     private float pitch; // Rotación acumulada en el eje X (vertical), aplicada solo a la cámara
+
+    // Recargar la escena (checkpoint/restart) bloquea el hilo principal mientras carga; el
+    // movimiento real del mouse durante ese hueco se acumula y Mouse.current.delta lo entrega
+    // entero de golpe en el primer frame post-carga, lo que se siente como un salto/traba de
+    // cámara. Se descarta esa primera lectura para que el look arranque limpio.
+    private bool suppressNextMouseDelta;
 
     [SerializeField]
     private float maxLookDownAngle = 40f; // Límite de inclinación, tanto hacia abajo como hacia arriba
@@ -281,6 +286,11 @@ public class PlayerHandler : MonoBehaviour
         // Oculta y bloquea el cursor en el centro de la pantalla
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // Descarta el primer delta de mouse que se lea (ver declaración del campo): recién
+        // terminó de cargar la escena, así que puede traer acumulado el movimiento real del
+        // mouse durante todo ese tiempo.
+        suppressNextMouseDelta = true;
 
         // Set up keybinds
         parryKey = Key.F;
@@ -621,8 +631,17 @@ public class PlayerHandler : MonoBehaviour
         inputDirection = inputDirection.normalized;
 
         // Lee el movimiento del mouse
-        mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity;
-        mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity;
+        if (suppressNextMouseDelta)
+        {
+            suppressNextMouseDelta = false;
+            mouseX = 0f;
+            mouseY = 0f;
+        }
+        else
+        {
+            mouseX = Mouse.current.delta.x.ReadValue() * mouseSensitivity;
+            mouseY = Mouse.current.delta.y.ReadValue() * mouseSensitivity;
+        }
     }
 
     private void TakeDamage(float amount)
