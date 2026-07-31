@@ -9,6 +9,7 @@ public enum AudioClipName
     ButtonSelectionSound,
     ButtonConfirmationSound,
     MenuTheme,
+    StartMusic,
     GameplayTheme,
     PickUpSound,
     KeyPickUpSound,

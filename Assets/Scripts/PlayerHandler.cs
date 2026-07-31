@@ -132,13 +132,18 @@ public class PlayerHandler : MonoBehaviour
     [SerializeField] private UnityEngine.UI.RawImage healthRawImage;
     [SerializeField] private Color healthLowColor = new Color(0.35f, 0f, 0f);
 
-    // Sneak meter setup
-    [SerializeField] private float sneakMultiplierBase = 0.5f;
-    [SerializeField] private float sneakDrainRate = 0.03f;
-    [SerializeField] private float sneakRegenRate = 0.04f;
+    // Agacharse reduce el rango/ángulo de detección de los enemigos (ver SneakFOVMultiplier),
+    // pero solo mientras dure este medidor de resistencia -- igual que el sprint, no se puede
+    // mantener agachado indefinidamente: al vaciarse fuerza a pararse (ver ReadInput) y no se
+    // puede volver a agachar hasta pasar crouchStaminaDepletionCooldown sin apretar la tecla.
+    [SerializeField] private float sneakMultiplierBase = 0.5f; // Multiplicador de FOV/alcance de detección mientras se está agachado
     [SerializeField] private float sneakSpeedMultiplier = 0.5f; // Velocidad mientras se está sneakeando, fijo sin importar cuánto se haya usado
-    [SerializeField] private UnityEngine.UI.Slider crouchBar; // Duración restante del bonus de sigilo antes de que el multiplicador vuelva a 1
-    private float sneakMeter;
+    [SerializeField] private float crouchStaminaDuration = 6f; // segundos de agache continuo hasta vaciar el medidor
+    [SerializeField] private float crouchStaminaRegenRate = 0.2f; // fracción del medidor por segundo mientras no se está agachado
+    [SerializeField] private float crouchStaminaDepletionCooldown = 3f; // tras vaciarse del todo, no se puede volver a agachar durante este tiempo
+    [SerializeField] private UnityEngine.UI.Slider crouchBar; // Resistencia restante para agacharse
+    private float crouchStaminaMeter = 1f; // 1 = lleno, 0 = vacío (forzado a pararse)
+    private float crouchStaminaRegenCooldownTimer = 0f;
     private bool isSprinting = false;
 
     // Sprint / stamina setup
@@ -177,7 +182,7 @@ public class PlayerHandler : MonoBehaviour
     private bool isInitialized = false;
 
     // Only applies the sneak bonus while actively crouching; otherwise enemies see at full FOV.
-    public float SneakFOVMultiplier => IsCrouching ? sneakMeter : 1f;
+    public float SneakFOVMultiplier => IsCrouching ? sneakMultiplierBase : 1f;
 
     // Consultado por HideOut para bloquear el parry mientras el jugador está escondido
     public bool IsHidden
@@ -283,9 +288,6 @@ public class PlayerHandler : MonoBehaviour
         EventManager.RaisePlayerHealthChanged(currentHealth, maxHealth);
         UpdateHealthVisuals();
 
-        // Sneak meter setup
-        sneakMeter = sneakMultiplierBase;
-
         // marker timer
         markerTimer = GetComponent<Timer>();
 
@@ -327,7 +329,7 @@ public class PlayerHandler : MonoBehaviour
             ReadInput();
         }
 
-        UpdateSneakMeter();
+        UpdateCrouchStamina();
         UpdateStamina();
         UpdateParry();
         UpdateActionBar();
@@ -585,8 +587,8 @@ public class PlayerHandler : MonoBehaviour
             TryStartParry();
         }
 
-        // -- Detect crouch input
-        bool crouchKeyHeld = Keyboard.current[crouchKey].isPressed;
+        // -- Detect crouch input (no se puede agachar con el medidor de resistencia vacío)
+        bool crouchKeyHeld = Keyboard.current[crouchKey].isPressed && crouchStaminaMeter > 0f;
 
         // -- Detect sprint input (no se puede iniciar sin stamina disponible)
         isSprinting = Keyboard.current[sprintKey].isPressed && staminaMeter > 0f;
@@ -680,23 +682,32 @@ public class PlayerHandler : MonoBehaviour
         }
     }
 
-    // Al agotarse (sneakMeter llega a 1) ya no se fuerza la salida del sneak: el jugador se
-    // queda agachado sin bonus de sigilo (SneakFOVMultiplier vuelve a 1) hasta que suelte la tecla.
-    private void UpdateSneakMeter()
+    // Mientras se mantiene agachado, drena el medidor de resistencia (crouchStaminaDuration
+    // segundos hasta vaciarse). Al vaciarse, ReadInput ya no permite reactivar IsCrouching
+    // (crouchStaminaMeter > 0f), así que el jugador queda parado hasta pasar
+    // crouchStaminaDepletionCooldown sin apretar la tecla, momento en que recién empieza a regenerar.
+    private void UpdateCrouchStamina()
     {
         if (IsCrouching)
         {
-            sneakMeter = Mathf.Min(1f, sneakMeter + sneakDrainRate * Time.deltaTime);
+            crouchStaminaMeter = Mathf.Max(0f, crouchStaminaMeter - Time.deltaTime / crouchStaminaDuration);
+            if (crouchStaminaMeter <= 0f)
+            {
+                crouchStaminaRegenCooldownTimer = crouchStaminaDepletionCooldown;
+            }
+        }
+        else if (crouchStaminaRegenCooldownTimer > 0f)
+        {
+            crouchStaminaRegenCooldownTimer -= Time.deltaTime;
         }
         else
         {
-            sneakMeter = Mathf.Max(sneakMultiplierBase, sneakMeter - sneakRegenRate * Time.deltaTime);
+            crouchStaminaMeter = Mathf.Min(1f, crouchStaminaMeter + crouchStaminaRegenRate * Time.deltaTime);
         }
 
-        // Lleno al empezar a agachar (bonus fresco), vacío cuando sneakMeter llega a 1 (bonus agotado)
         if (crouchBar != null)
         {
-            crouchBar.value = 1f - Mathf.InverseLerp(sneakMultiplierBase, 1f, sneakMeter);
+            crouchBar.value = crouchStaminaMeter;
         }
     }
 

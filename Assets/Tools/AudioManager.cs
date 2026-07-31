@@ -144,6 +144,7 @@ public static class AudioManager
         audioClips.Add(AudioClipName.ProximitySound, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.ProximitySound.ToString()));
 
         audioClips.Add(AudioClipName.MenuTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.MenuTheme.ToString()));
+        audioClips.Add(AudioClipName.StartMusic, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.StartMusic.ToString()));
         audioClips.Add(AudioClipName.GameplayTheme, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.GameplayTheme.ToString()));
 
         audioClips.Add(AudioClipName.BS_Ambience1, Resources.Load<AudioClip>("AmbientSounds/" + AudioClipName.BS_Ambience1.ToString()));
@@ -186,6 +187,7 @@ public static class AudioManager
             case AudioClipName.KeyPickUpSound:
             case AudioClipName.MenuTheme:
             case AudioClipName.GameplayTheme:
+            case AudioClipName.StartMusic:
                 return 0.75f;
             case AudioClipName.BS_Damage:
                 return 0.7f;

@@ -10,8 +10,10 @@ using UnityEngine.UI;
 
 public class InitializeMainMenu : MonoBehaviour
 {
+    // Escena de introducción (logo + StartMusic) que se carga al elegir "Play", antes de la
+    // escena de juego -- ver IntroSceneController, que es quien hace el salto final.
     [SerializeField]
-    private string gameSceneName;
+    private string introSceneName;
 
     private MainMenuOptionsEnum[] menuOptions =
     (MainMenuOptionsEnum[]) Enum.GetValues(typeof(MainMenuOptionsEnum));
@@ -322,7 +324,7 @@ public class InitializeMainMenu : MonoBehaviour
                 // quedaría marcada como completa para siempre, y su llave nunca volvería
                 // a aparecer en la partida nueva.
                 GameManager.ResetProgress();
-                SceneManager.LoadScene(gameSceneName);
+                SceneManager.LoadScene(introSceneName);
                 break;
 
             case MainMenuOptionsEnum.Settings:

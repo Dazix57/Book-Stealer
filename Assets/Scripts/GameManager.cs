@@ -53,6 +53,24 @@ public class GameManager : MonoBehaviour
         return completedObjectiveAreas.ContainsKey(areaTag) && completedObjectiveAreas[areaTag];
     }
 
+    // Se pone en true justo antes de cargar la escena de juego desde la escena de introducción
+    // (ver IntroSceneController), y se consume (lee + resetea) una única vez desde ahí. Restart
+    // y LoadCheckpoint recargan la escena de juego directamente, sin pasar por la introducción,
+    // así que nunca la vuelven a poner en true: el panel tutorial solo aparece la primera vez.
+    private static bool pendingTutorial = false;
+
+    public static void RequestTutorial()
+    {
+        pendingTutorial = true;
+    }
+
+    public static bool ConsumePendingTutorial()
+    {
+        bool value = pendingTutorial;
+        pendingTutorial = false;
+        return value;
+    }
+
     // Borra todo el progreso acumulado (áreas completadas, orden, llaves). Hay que llamarlo
     // antes de arrancar una partida realmente nueva (Restart, o Play desde el menú principal)
     // -- si no, un área completada en una sesión anterior queda marcada como completa para

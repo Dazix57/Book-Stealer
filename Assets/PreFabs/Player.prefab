@@ -540,9 +540,10 @@ MonoBehaviour:
   healthRawImage: {fileID: 609901728495805755}
   healthLowColor: {r: 0.381132, g: 0.16899249, b: 0.16899249, a: 1}
   sneakMultiplierBase: 0.5
-  sneakDrainRate: 0.1
-  sneakRegenRate: 0.05
   sneakSpeedMultiplier: 0.5
+  crouchStaminaDuration: 6
+  crouchStaminaRegenRate: 0.2
+  crouchStaminaDepletionCooldown: 3
   crouchBar: {fileID: 1049731102810570650}
   sprintStaminaDuration: 2
   staminaRegenRate: 0.05

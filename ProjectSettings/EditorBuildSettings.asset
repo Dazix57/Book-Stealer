@@ -36,6 +36,9 @@ EditorBuildSettings:
     path: Assets/Scenes/PRUEBITA.unity
     guid: 9d1cfb8a5059d9840ba0429455c7a9aa
   - enabled: 1
+    path: Assets/Scenes/Escena1.unity
+    guid: c3c38cc07409d47af97549ba8b3cb9f0
+  - enabled: 1
     path: Assets/Scenes/MAPAAVANZADOPUYO.unity
     guid: d9a4c3ff7883ffd4fa78bce2bb784e46
   - enabled: 1
