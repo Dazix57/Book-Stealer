@@ -16000,6 +16000,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_ShopInterior_Cafe_01 (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4705091368057445732, guid: f5e03ad79872c4499aefbd7bf8043d04, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
+      objectReference: {fileID: 0}
     - target: {fileID: 4931736812101270014, guid: f5e03ad79872c4499aefbd7bf8043d04, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.5400009
@@ -41131,6 +41135,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 929257365752477988, guid: ef047c9ad4174c74d8606ae183bae58c, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
+      objectReference: {fileID: 0}
     - target: {fileID: 1880609633041591990, guid: ef047c9ad4174c74d8606ae183bae58c, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -46677,6 +46685,10 @@ PrefabInstance:
     - target: {fileID: 2438808653403948739, guid: 6e8490765a5d2644181488d1d9c0fdb2, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2438808653403948739, guid: 6e8490765a5d2644181488d1d9c0fdb2, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
       objectReference: {fileID: 0}
     - target: {fileID: 2839775208203027966, guid: 6e8490765a5d2644181488d1d9c0fdb2, type: 3}
       propertyPath: m_Layer
@@ -74393,6 +74405,10 @@ PrefabInstance:
     - target: {fileID: 4705091368057445732, guid: f5e03ad79872c4499aefbd7bf8043d04, type: 3}
       propertyPath: m_Name
       value: SM_Prop_ShopInterior_Cafe_01 (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4705091368057445732, guid: f5e03ad79872c4499aefbd7bf8043d04, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
       objectReference: {fileID: 0}
     - target: {fileID: 4931736812101270014, guid: f5e03ad79872c4499aefbd7bf8043d04, type: 3}
       propertyPath: m_LocalPosition.x
@@ -151615,6 +151631,10 @@ PrefabInstance:
     - target: {fileID: 5856772488909771889, guid: 5e18b83a313054e9fbd29d6324b591c0, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5856772488909771889, guid: 5e18b83a313054e9fbd29d6324b591c0, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -235462,6 +235482,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 5856772488909771889, guid: 5e18b83a313054e9fbd29d6324b591c0, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -259624,6 +259648,10 @@ PrefabInstance:
     - target: {fileID: 2839775208203027966, guid: 6e8490765a5d2644181488d1d9c0fdb2, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2839775208203027966, guid: 6e8490765a5d2644181488d1d9c0fdb2, type: 3}
+      propertyPath: m_TagString
+      value: HideOut
       objectReference: {fileID: 0}
     - target: {fileID: 3997808642902928483, guid: 6e8490765a5d2644181488d1d9c0fdb2, type: 3}
       propertyPath: m_Name

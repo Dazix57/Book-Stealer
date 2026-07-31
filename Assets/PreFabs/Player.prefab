@@ -1094,7 +1094,7 @@ MonoBehaviour:
   stepIntervalAtReferenceSpeed: 0.4
   audioSource: {fileID: 0}
   minDistance: 1
-  maxDistance: 35
+  maxDistance: 24.5
   playerHandler: {fileID: 0}
   rb: {fileID: 0}
   baseVolumeMultiplier: 0.6
@@ -1475,7 +1475,7 @@ Light:
   m_Color: {r: 0.93207544, g: 0.8242058, b: 0.56100386, a: 1}
   m_Intensity: 20
   m_Range: 1000
-  m_SpotAngle: 90.119644
+  m_SpotAngle: 63.0837508
   m_InnerSpotAngle: 0
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
