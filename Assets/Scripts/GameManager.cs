@@ -15,6 +15,17 @@ public class GameManager : MonoBehaviour
     // Permite consultar cuántas llaves lleva actualmente (Count) y de qué áreas.
     private static readonly List<string> collectedKeys = new List<string>();
 
+    // Nombres (gameObject.name) de las puertas ya abiertas. Las puertas no tienen tag propio
+    // (todas comparten el mismo prefab sin tag), así que a diferencia de las áreas de objetivos
+    // se identifican por nombre: Unity le asigna uno estable y único por instancia dentro de la
+    // escena (ej. "Door (9)"), que se conserva igual en cada recarga de esa misma escena.
+    private static readonly HashSet<string> openedDoors = new HashSet<string>();
+
+    public static void MarkDoorOpened(string doorName)
+    {
+        openedDoors.Add(doorName);
+    }
+
     public static void AddKey(string areaTag)
     {
         collectedKeys.Add(areaTag);
@@ -53,6 +64,10 @@ public class GameManager : MonoBehaviour
         return completedObjectiveAreas.ContainsKey(areaTag) && completedObjectiveAreas[areaTag];
     }
 
+    // Usado por el menú de muerte para decidir si un Restart puede reanudar desde el
+    // último checkpoint (ver GameOverManager.RestartGame) en vez de tirar todo el progreso.
+    public static bool HasCompletedObjectiveAreas => completedObjectiveAreasOrder.Count > 0;
+
     // Se pone en true justo antes de cargar la escena de juego desde la escena de introducción
     // (ver IntroSceneController), y se consume (lee + resetea) una única vez desde ahí. Restart
     // y LoadCheckpoint recargan la escena de juego directamente, sin pasar por la introducción,
@@ -71,12 +86,12 @@ public class GameManager : MonoBehaviour
         return value;
     }
 
-    // Borra todo el progreso acumulado (áreas completadas, orden, llaves). Hay que llamarlo
-    // antes de arrancar una partida realmente nueva (Restart, o Play desde el menú principal)
-    // -- si no, un área completada en una sesión anterior queda marcada como completa para
-    // siempre en Awake() de su CheckObjectives, aunque la escena recién cargada resetee los
-    // libros y la llave a su estado inicial: como esa rama nunca llama a ShowKey(), la llave
-    // no vuelve a aparecer y las puertas que la piden quedan cerradas para siempre.
+    // Borra todo el progreso acumulado (áreas completadas, orden, llaves, puertas abiertas).
+    // Hay que llamarlo antes de arrancar una partida realmente nueva (Restart, o Play desde el
+    // menú principal) -- si no, un área completada en una sesión anterior queda marcada como
+    // completa para siempre en Awake() de su CheckObjectives, aunque la escena recién cargada
+    // resetee los libros y la llave a su estado inicial: como esa rama nunca llama a ShowKey(),
+    // la llave no vuelve a aparecer y las puertas que la piden quedan cerradas para siempre.
     // NO llamar desde LoadCheckpoint()/OnCheckpointSceneLoaded(): esos SÍ dependen de que
     // este estado sobreviva la recarga, para restaurar el progreso guardado.
     public static void ResetProgress()
@@ -84,6 +99,7 @@ public class GameManager : MonoBehaviour
         completedObjectiveAreas.Clear();
         completedObjectiveAreasOrder.Clear();
         collectedKeys.Clear();
+        openedDoors.Clear();
     }
 
     public static Dictionary<string, int> GetChildrensTags(GameObject parent, int childrenSize)
@@ -116,6 +132,13 @@ public class GameManager : MonoBehaviour
     private static void OnCheckpointSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         SceneManager.sceneLoaded -= OnCheckpointSceneLoaded;
+
+        // Restaura las puertas ya abiertas antes que nada: no dependen de que haya
+        // algún área completada (una puerta puede pedir 0 llaves).
+        foreach (string doorName in openedDoors)
+        {
+            GameObject.Find(doorName).GetComponent<Door>().RestoreOpenState();
+        }
 
         if (completedObjectiveAreas.Count == 0) return;
 

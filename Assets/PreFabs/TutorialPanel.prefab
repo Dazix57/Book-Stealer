@@ -510,12 +510,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>WASD\t: </b>  Move\n<b>Mouse\t: </b>  Look around\n<b>Shift\t\t: </b> 
-    Sprint (blue bar)\n<b>Ctrl\t\t: </b>  Crouch / stealth (yellow bar)\n<b>Espacio\t:
-    </b>  Hide (only in tables, but not all!)\n<b>F\t\t: </b>  Parry (stun enemies,
-    has cooldown!)\n<b>E\t\t: </b>  Interact / pickup items / open doors\n<b>Tab\t\t:
-    </b>  Visualize waypoint to nearest objective area for a limited time\n<b>Esc\t\t:
-    </b>  Pause menu"
+  m_text: "<b>WASD\t: </b>  Move\n\n<b>Mouse\t: </b>  Look around\n\n<b>Shift\t\t:
+    </b>  Sprint (blue bar)\n\n<b>Ctrl\t\t: </b>  Crouch / stealth / sixth sense
+    (yellow bar)\n\n<b>Space\t: </b>  Hide (only in tables and for a limited time.
+    Not all tables are hideouts!)\n\n<b>F\t\t: </b>  Parry (stun enemies, has cooldown!)\n\n<b>E\t\t:
+    </b>  Interact / pickup items / open doors\n\n<b>Tab\t\t: </b>  Visualize waypoint
+    to nearest objective area for a limited time\n\n<b>Esc\t\t: </b>  Pause menu"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
   m_sharedMaterial: {fileID: -1347824485694669935, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}

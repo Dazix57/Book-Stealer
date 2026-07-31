@@ -167,6 +167,7 @@ public class Door : MonoBehaviour
         closedDoors.Remove(this);
         RemoveDoorMarker();
         UpdateLastDoorMarker();
+        GameManager.MarkDoorOpened(gameObject.name);
 
         foreach (Door linkedDoor in linkedDoors)
         {
@@ -175,6 +176,28 @@ public class Door : MonoBehaviour
                 linkedDoor.Open();
             }
         }
+    }
+
+    // Aplica el estado de "abierta" sin sonido ni giro de bisagra: se usa al restaurar un
+    // checkpoint (ver GameManager.OnCheckpointSceneLoaded) para puertas que ya se habían
+    // abierto en una sesión anterior, así no sorprende al jugador con la animación de apertura.
+    // No hace falta propagar a linkedDoors ni volver a reportar a GameManager: cada puerta
+    // vinculada que en su momento se abrió quedó guardada con su propio nombre.
+    public void RestoreOpenState()
+    {
+        if (isOpen) return;
+
+        isOpen = true;
+        promptPanel.SetActive(false);
+
+        if (doorPivot != null)
+        {
+            doorPivot.localRotation *= Quaternion.Euler(0f, openAngle, 0f);
+        }
+
+        closedDoors.Remove(this);
+        RemoveDoorMarker();
+        UpdateLastDoorMarker();
     }
 
     // Se llama siempre que ESTA puerta se abre, tenga o no el marcador activo (si nunca
