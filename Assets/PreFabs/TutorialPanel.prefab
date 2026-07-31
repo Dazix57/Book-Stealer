@@ -29,7 +29,7 @@ RectTransform:
   m_GameObject: {fileID: 100000001}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 100000011}
@@ -74,7 +74,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
@@ -97,7 +97,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
@@ -114,7 +114,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialPanelController
   panel: {fileID: 100000010}
   continueButton: {fileID: 100000064}
@@ -210,7 +210,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0.8}
@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.09, g: 0.1, b: 0.13, a: 0.97}
@@ -363,7 +363,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -373,7 +373,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: CONTROLES
+  m_text: CONTROLS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
   m_sharedMaterial: {fileID: -1347824485694669935, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
@@ -500,7 +500,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -510,7 +510,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>WASD</b>  Moverte\n<b>Mouse</b>  Mirar alrededor\n<b>Shift</b>  Correr\n<b>Ctrl</b>  Agachar / sigilo\n<b>Espacio</b>  Esconderte en un escondite\n<b>F</b>  Parry (aturdir a un enemigo encima tuyo)\n<b>E</b>  Interactuar / recoger / abrir puertas\n<b>Tab</b>  Marcar el objetivo incompleto m\xE1s cercano\n<b>Esc</b>  Pausa"
+  m_text: "<b>WASD\t: </b>  Move\n<b>Mouse\t: </b>  Look around\n<b>Shift\t\t: </b> 
+    Sprint (blue bar)\n<b>Ctrl\t\t: </b>  Crouch / stealth (yellow bar)\n<b>Espacio\t:
+    </b>  Hide (only in tables, but not all!)\n<b>F\t\t: </b>  Parry (stun enemies,
+    has cooldown!)\n<b>E\t\t: </b>  Interact / pickup items / open doors\n<b>Tab\t\t:
+    </b>  Visualize waypoint to nearest objective area for a limited time\n<b>Esc\t\t:
+    </b>  Pause menu"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
   m_sharedMaterial: {fileID: -1347824485694669935, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
@@ -639,7 +644,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.36, g: 0.63, b: 0.42, a: 1}
@@ -669,7 +674,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -758,7 +763,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -768,7 +773,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Entendido
+  m_text: Confirm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
   m_sharedMaterial: {fileID: -1347824485694669935, guid: 6a8fa0e06d0134e6aae8d98a72913156, type: 2}
