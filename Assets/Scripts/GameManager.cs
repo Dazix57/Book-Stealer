@@ -53,6 +53,21 @@ public class GameManager : MonoBehaviour
         return completedObjectiveAreas.ContainsKey(areaTag) && completedObjectiveAreas[areaTag];
     }
 
+    // Borra todo el progreso acumulado (áreas completadas, orden, llaves). Hay que llamarlo
+    // antes de arrancar una partida realmente nueva (Restart, o Play desde el menú principal)
+    // -- si no, un área completada en una sesión anterior queda marcada como completa para
+    // siempre en Awake() de su CheckObjectives, aunque la escena recién cargada resetee los
+    // libros y la llave a su estado inicial: como esa rama nunca llama a ShowKey(), la llave
+    // no vuelve a aparecer y las puertas que la piden quedan cerradas para siempre.
+    // NO llamar desde LoadCheckpoint()/OnCheckpointSceneLoaded(): esos SÍ dependen de que
+    // este estado sobreviva la recarga, para restaurar el progreso guardado.
+    public static void ResetProgress()
+    {
+        completedObjectiveAreas.Clear();
+        completedObjectiveAreasOrder.Clear();
+        collectedKeys.Clear();
+    }
+
     public static Dictionary<string, int> GetChildrensTags(GameObject parent, int childrenSize)
     {
         Dictionary<string, int> childrens = new Dictionary<string, int>();

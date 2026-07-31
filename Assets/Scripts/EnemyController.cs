@@ -33,6 +33,14 @@ public class EnemyController : MonoBehaviour
     [SerializeField]
     private Texture jumpscareImage;
 
+    // Opacidad máxima del jumpscare (0-1). Algunas imágenes (ej. fondos claros) se perciben
+    // mucho más intensas/duraderas que otras a la misma opacidad, aunque el fundido dure lo
+    // mismo para todos los enemigos (ver ChaseJumpscareManager) -- este valor permite atenuar
+    // esas imágenes puntualmente sin tocar el arte.
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float jumpscareMaxAlpha = 1f;
+
     [SerializeField]
     private float patrolPauseMinDuration = 0.5f; // Espera al llegar a un punto antes de ir al siguiente
     [SerializeField]
@@ -175,8 +183,9 @@ public class EnemyController : MonoBehaviour
     public static event System.Action ChaseEnded;
 
     // Disparado junto con ChaseStarted (mismo gate de globalChaseCount == 1), pero lleva la imagen
-    // del enemigo que inició la persecución, para el jumpscare rápido que la muestra en pantalla.
-    public static event System.Action<Texture> ChaseJumpscare;
+    // del enemigo que inició la persecución (y su opacidad máxima), para el jumpscare rápido que
+    // la muestra en pantalla.
+    public static event System.Action<Texture, float> ChaseJumpscare;
 
     // Llamado por InitializeGameplayAudio al cargar la escena de gameplay: globalChaseCount
     // es estático, así que sin esto podría arrastrar un valor viejo de la escena anterior.
@@ -200,6 +209,14 @@ public class EnemyController : MonoBehaviour
     private int repeatCount;
     private bool isPatrolPaused;
     private float patrolPauseTimer;
+
+    // Salvavidas anti-atasco: si el punto asignado queda inalcanzable (ej. en otro piso, sin
+    // conexión de NavMesh hasta ahí), el agente nunca baja de remainingDistance y se queda
+    // "caminando" para siempre sin llegar a ningún lado. Pasado este tiempo sin progreso real,
+    // se fuerza a elegir otro punto en vez de quedar congelado.
+    private const float patrolStuckTimeout = 6f;
+    private float patrolStuckTimer;
+    private float lastRemainingDistance;
 
     // El sprite (forward/backward) y su silueta de resalte mientras el jugador está agachado
     // viven en EnemyFacingSprite, que también es quien maneja el halo emissive de niebla por
@@ -586,7 +603,7 @@ public class EnemyController : MonoBehaviour
         if (globalChaseCount == 1)
         {
             ChaseStarted?.Invoke();
-            ChaseJumpscare?.Invoke(jumpscareImage);
+            ChaseJumpscare?.Invoke(jumpscareImage, jumpscareMaxAlpha);
         }
     }
 
@@ -862,6 +879,8 @@ public class EnemyController : MonoBehaviour
             return;
 
         enemyAgent.SetDestination(points[destPoint].position);
+        patrolStuckTimer = 0f;
+        lastRemainingDistance = float.PositiveInfinity;
 
         int newDestPoint = destPoint;
 
@@ -905,14 +924,43 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        if (enemyAgent.pathPending) return;
+
+        // El punto quedó completamente inalcanzable (sin ruta posible, ej. otro piso sin
+        // conexión de NavMesh): no tiene sentido esperar a que "llegue" a remainingDistance < 0.5,
+        // porque nunca va a pasar. Se prueba con otro punto de inmediato.
+        if (!enemyAgent.hasPath || enemyAgent.pathStatus == NavMeshPathStatus.PathInvalid)
+        {
+            GotoNextPoint();
+            return;
+        }
+
         // Choose the next destination point when the agent gets
         // close to the current one.
-        if (!enemyAgent.pathPending && enemyAgent.remainingDistance < 0.5f)
+        if (enemyAgent.remainingDistance < 0.5f)
         {
             isPatrolPaused = true;
             patrolPauseTimer = Random.Range(patrolPauseMinDuration, patrolPauseMaxDuration);
             enemyAgent.isStopped = true;
             enemyAgent.velocity = Vector3.zero;
+            return;
+        }
+
+        // Salvavidas: ruta parcial (o agente empujado/trabado) que jamás baja de 0.5 de
+        // remainingDistance. Si hace patrolStuckTimeout segundos que no achica la distancia
+        // real, se lo da por atascado y se elige otro punto en vez de quedar congelado ahí.
+        if (enemyAgent.remainingDistance < lastRemainingDistance - 0.1f)
+        {
+            lastRemainingDistance = enemyAgent.remainingDistance;
+            patrolStuckTimer = 0f;
+        }
+        else
+        {
+            patrolStuckTimer += Time.deltaTime;
+            if (patrolStuckTimer >= patrolStuckTimeout)
+            {
+                GotoNextPoint();
+            }
         }
     }
 }

@@ -316,6 +316,12 @@ public class InitializeMainMenu : MonoBehaviour
         switch (currentSelection)
         {
             case MainMenuOptionsEnum.Play:
+                // Arrancar desde el menú siempre es una partida nueva (no hay "Continuar"):
+                // sin este reset, un área completada en una sesión anterior de este mismo
+                // proceso (ej. el jugador murió, volvió al menú y le dio Play de nuevo)
+                // quedaría marcada como completa para siempre, y su llave nunca volvería
+                // a aparecer en la partida nueva.
+                GameManager.ResetProgress();
                 SceneManager.LoadScene(gameSceneName);
                 break;
 

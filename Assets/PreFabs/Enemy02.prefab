@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 8200494656746947877}
   - component: {fileID: 9202851512697790074}
   m_Layer: 0
-  m_Name: Enemy
+  m_Name: Enemy02
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -32,7 +32,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5626, y: 0.5626, z: 0.5626}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9000000000000001002}
@@ -57,8 +57,8 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 1
-  m_BaseOffset: 0.5
+  m_Height: 2.5367
+  m_BaseOffset: 1.26835
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!114 &847398664842913329
@@ -76,7 +76,8 @@ MonoBehaviour:
   chaseMultiplier: 2
   fieldOfView: 60
   viewDistance: 5
-  jumpscareImage: {fileID: 2800000, guid: 57e4d545e0c104146b66c5dd28674888, type: 3}
+  jumpscareImage: {fileID: 2800000, guid: 825a993df9d8c4d62872141b3cdb9fe9, type: 3}
+  jumpscareMaxAlpha: 0.55
   patrolPauseMinDuration: 0.5
   patrolPauseMaxDuration: 5
   closeRangeDistance: 15
@@ -97,6 +98,9 @@ MonoBehaviour:
   enemyAudioSource: {fileID: 0}
   audioMinDistance: 5
   audioMaxDistance: 40
+  proximityAudioSource: {fileID: 0}
+  proximityMinDistance: 3
+  proximityMaxDistance: 18
   idleSoundMinInterval: 15
   idleSoundMaxInterval: 45
   idleaudioSource: {fileID: 0}
@@ -145,10 +149,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e836c1858746fff4587102dab8b0519b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyFacingSprite
   forwardSprite: {fileID: 9000000000000001001}
   backwardSprite: {fileID: 9000000000000002001}
+  facingHysteresis: 0.35
+  minFacingSwitchInterval: 0.2
+  farDistance: 50
+  mediumDistance: 30
+  nearDistance: 15
+  distanceHysteresis: 1
+  farPixelGrid: 16
+  mediumPixelGrid: 32
+  nearPixelGrid: 64
+  farDistanceTint: {r: 0.22, g: 0.25, b: 0.32, a: 1}
+  mediumDistanceTint: {r: 0.38, g: 0.42, b: 0.5, a: 1}
+  nearDistanceTint: {r: 0.58, g: 0.62, b: 0.7, a: 1}
+  fullResolutionTint: {r: 0.78, g: 0.8, b: 0.86, a: 1}
+  authoredAnimationFps: 60
+  farAnimationFps: 4
+  mediumAnimationFps: 8
+  nearAnimationFps: 12
+  fullSpeedDistance: 4
+  closestAnimationFps: 24
+  animationFpsChangePerSecond: 24
   highlightColor: {r: 1, g: 0.85, b: 0.2, a: 0.6}
   highlightScale: 1.15
 --- !u!136 &8200494656746947877
@@ -173,7 +197,7 @@ CapsuleCollider:
   m_Radius: 1
   m_Height: 5
   m_Direction: 1
-  m_Center: {x: 0, y: -1.25, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &9202851512697790074
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,6 +219,7 @@ MonoBehaviour:
   minDistance: 1
   maxDistance: 27.5
   agent: {fileID: 0}
+  enemyController: {fileID: 0}
   loudnessMultiplier: 0.9
 --- !u!1 &9000000000000001001
 GameObject:
@@ -279,7 +304,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 1470192363, guid: a101ae56d74b64980857390c7b4bb07f, type: 3}
+  m_Sprite: {fileID: -58815065, guid: 074441dedc6f44ed39f02f28ca314b25, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -300,7 +325,7 @@ Animator:
   m_GameObject: {fileID: 9000000000000001001}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 30bdadb8528c84ef8b6501a5202e1997, type: 2}
+  m_Controller: {fileID: 9100000, guid: 64157331c9d4d45629d9b887fb629c3b, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -324,6 +349,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97da3b82328589e4c9b5c3b9c16713fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Billboard
+  billboardType: 0
+  lockX: 0
+  lockY: 0
+  lockZ: 0
 --- !u!1 &9000000000000002001
 GameObject:
   m_ObjectHideFlags: 0
@@ -407,7 +436,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -228168787, guid: beb828a2aa1c04563acd4e1ed51d6f1c, type: 3}
+  m_Sprite: {fileID: 1154397008, guid: 07ade45fedf23421b9b65f9c518dd8d2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -428,7 +457,7 @@ Animator:
   m_GameObject: {fileID: 9000000000000002001}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: db1a50e5872d4ffaa29d2c2381f9d6a4, type: 2}
+  m_Controller: {fileID: 9100000, guid: 9436f3a5a110548cda041e3c31476723, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -452,3 +481,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97da3b82328589e4c9b5c3b9c16713fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Billboard
+  billboardType: 0
+  lockX: 0
+  lockY: 0
+  lockZ: 0

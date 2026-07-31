@@ -98,6 +98,10 @@ public class GameOverManager : MonoBehaviour
         // escena recién cargada traiga uno fresco en su posición de partida.
         InitializePauseMenu.DestroyPersistentPlayer();
 
+        // Restart es una partida nueva de verdad (a diferencia de LoadCheckpoint): sin esto,
+        // las áreas completadas/llaves de la partida anterior quedarían pegadas para siempre.
+        GameManager.ResetProgress();
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 

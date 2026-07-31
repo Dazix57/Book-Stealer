@@ -802,6 +802,9 @@ public class PlayerHandler : MonoBehaviour
         // Revisa si NO esta en el area del objetivo
         if (!inObjectiveArea)
         {
+            // Se reinicia acá: si ya no queda ningún área incompleta (lista vacía), no debe
+            // quedar apuntando a la última que se buscó en un llamado anterior.
+            closestObjective = null;
             List<GameObject> objectives = new(GameObject.FindGameObjectsWithTag("Mark"));
             Vector3 currentPosition = transform.position;
             float closestDistance = Mathf.Infinity;

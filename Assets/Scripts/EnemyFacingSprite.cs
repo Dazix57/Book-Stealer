@@ -1,87 +1,292 @@
+using System.Collections.Generic;
 using UnityEngine;
 
+// Presentación visual del enemigo: alterna su cara visible, aplica pixelado por distancia y
+// limita la velocidad de sus animaciones. La calidad cambia por niveles con histéresis para que
+// un pequeño movimiento de cámara alrededor de un límite no haga saltar de nivel continuamente.
 public class EnemyFacingSprite : MonoBehaviour
 {
+    [Header("Sprites")]
     [SerializeField] private GameObject forwardSprite;
     [SerializeField] private GameObject backwardSprite;
 
-    // Silueta que se ve a través de paredes mientras el jugador está agachado (ver
-    // EnemyController.UpdateHighlight / SetHighlighted). Es una copia más grande de cada
-    // sprite, creada en runtime como hijo de ese mismo GameObject: al quedar bajo un padre
-    // inactivo (forwardSprite/backwardSprite se apagan según de qué lado se vea al enemigo),
-    // se oculta sola sin necesitar sincronizarla a mano.
+    [Header("Facing")]
+    [SerializeField] private float facingHysteresis = 0.35f;
+    [SerializeField] private float minFacingSwitchInterval = 0.2f;
+
+    [Header("Distance pixelation")]
+    [Tooltip("Por encima de esta distancia, el sprite se renderiza en 16 x 16.")]
+    [SerializeField] private float farDistance = 50f;
+    [Tooltip("Entre esta distancia y Far Distance, el sprite se renderiza en 32 x 32.")]
+    [SerializeField] private float mediumDistance = 30f;
+    [Tooltip("Entre esta distancia y Medium Distance, el sprite se renderiza en 64 x 64.")]
+    [SerializeField] private float nearDistance = 15f;
+    [Tooltip("Margen para evitar que la calidad oscile al cruzar una distancia límite.")]
+    [SerializeField] private float distanceHysteresis = 1f;
+    [SerializeField] private int farPixelGrid = 16;
+    [SerializeField] private int mediumPixelGrid = 32;
+    [SerializeField] private int nearPixelGrid = 64;
+
+    [Header("Distance darkness")]
+    [Tooltip("Tintes multiplicativos: valores más bajos hacen al enemigo más difícil de distinguir.")]
+    [SerializeField] private Color farDistanceTint = new Color(0.22f, 0.25f, 0.32f, 1f);
+    [SerializeField] private Color mediumDistanceTint = new Color(0.38f, 0.42f, 0.50f, 1f);
+    [SerializeField] private Color nearDistanceTint = new Color(0.58f, 0.62f, 0.70f, 1f);
+    [SerializeField] private Color fullResolutionTint = new Color(0.78f, 0.80f, 0.86f, 1f);
+
+    [Header("Animation frame rate")]
+    [Tooltip("Los clips actuales del enemigo están muestreados a 60 FPS.")]
+    [SerializeField] private float authoredAnimationFps = 60f;
+    [SerializeField] private float farAnimationFps = 4f;
+    [SerializeField] private float mediumAnimationFps = 8f;
+    [SerializeField] private float nearAnimationFps = 12f;
+    [Tooltip("A esta distancia o menos, la animación alcanza su velocidad máxima de cerca.")]
+    [SerializeField] private float fullSpeedDistance = 4f;
+    [SerializeField] private float closestAnimationFps = 24f;
+    [SerializeField] private float animationFpsChangePerSecond = 24f;
+
+    [Header("Crouch highlight")]
     [SerializeField] private Color highlightColor = new Color(1f, 0.85f, 0.2f, 0.6f);
     [SerializeField] private float highlightScale = 1.15f;
 
-    // Reemplaza a la luz real que tenía el enemigo (delataba su posición a distancia porque
-    // iluminaba el entorno a su alrededor). El sprite usa Custom/EnemyCamouflageNoise: en vez de
-    // brillar, se camufla con ruido tipo estática (mismo principio que el pixelado ya usado en la
-    // cámara principal, ver Assets/Materials/PixelCamera.renderTexture) — solo a distancias
-    // realmente lejanas empieza a aparecer ruido; dentro de clearDistance se dibuja tal cual es,
-    // sin ningún ruido.
-    [Header("Camuflaje por distancia")]
-    [SerializeField] private float clearDistance = 20f; // dentro de este radio, sprite 100% nítido (sin ruido)
-    [SerializeField] private float obscuredDistance = 28f; // más allá de esto, ruido a su tope (ver _MaxNoiseAmount en el shader)
-
-    // Instancia propia por renderer (en vez de una sola compartida): así queda garantizado que
-    // ambas caras reciben el mismo _Clarity todos los frames, sin depender de que Unity trate un
-    // Material asignado a dos SpriteRenderer distintos como realmente equivalente en todo momento.
-    private Material forwardMaterial;
-    private Material backwardMaterial;
+    private enum DetailLevel { Far, Medium, Near, Full }
 
     private Transform cameraTransform;
-    private bool showingForward;
-
     private SpriteRenderer forwardRenderer;
     private SpriteRenderer backwardRenderer;
     private SpriteRenderer forwardHighlight;
     private SpriteRenderer backwardHighlight;
+    private Material forwardMaterial;
+    private Material backwardMaterial;
+    private Animator[] spriteAnimators;
+    private Sprite forwardLastSprite;
+    private Sprite backwardLastSprite;
+    private DetailLevel currentDetailLevel;
+    private bool isInitialized;
+    private bool showingForward;
+    private float lastFacingSwitchTime = float.NegativeInfinity;
+    private float currentAnimationFps;
+    private readonly Dictionary<Sprite, Vector4> spriteUvRectCache = new Dictionary<Sprite, Vector4>();
 
-    void Start()
+    private const string PixelationShaderName = "Custom/EnemyDistancePixelation";
+    private static readonly int PixelGridSizeId = Shader.PropertyToID("_PixelGridSize");
+    private static readonly int SpriteUVRectId = Shader.PropertyToID("_SpriteUVRect");
+    private static readonly int DistanceTintId = Shader.PropertyToID("_DistanceTint");
+
+    private void Start()
     {
-        cameraTransform = Camera.main.transform;
+        cameraTransform = Camera.main != null ? Camera.main.transform : null;
+        forwardRenderer = forwardSprite != null ? forwardSprite.GetComponent<SpriteRenderer>() : null;
+        backwardRenderer = backwardSprite != null ? backwardSprite.GetComponent<SpriteRenderer>() : null;
 
-        forwardRenderer = forwardSprite.GetComponent<SpriteRenderer>();
-        backwardRenderer = backwardSprite.GetComponent<SpriteRenderer>();
+        if (forwardRenderer == null || backwardRenderer == null)
+        {
+            Debug.LogError($"{nameof(EnemyFacingSprite)} on {name} requires forward and backward SpriteRenderers.", this);
+            enabled = false;
+            return;
+        }
 
-        Shader noiseShader = Shader.Find("Custom/EnemyCamouflageNoise");
-        forwardMaterial = new Material(noiseShader);
-        backwardMaterial = new Material(noiseShader);
+        Shader pixelationShader = Shader.Find(PixelationShaderName);
+        if (pixelationShader == null)
+        {
+            Debug.LogError($"Could not find shader {PixelationShaderName}.", this);
+            enabled = false;
+            return;
+        }
+
+        forwardMaterial = new Material(pixelationShader);
+        backwardMaterial = new Material(pixelationShader);
         forwardRenderer.material = forwardMaterial;
         backwardRenderer.material = backwardMaterial;
 
         forwardHighlight = CreateHighlightRenderer(forwardRenderer);
         backwardHighlight = CreateHighlightRenderer(backwardRenderer);
+        spriteAnimators = GetComponentsInChildren<Animator>(true);
 
+        currentDetailLevel = DetailLevelForDistance(GetDistanceToCamera());
+        currentAnimationFps = AnimationFpsForDistance(GetDistanceToCamera(), currentDetailLevel);
+        ApplyDetailLevel(currentDetailLevel);
+        ApplyAnimationSpeed(currentAnimationFps);
         SetFacing(true);
+        isInitialized = true;
     }
 
-    void Update()
+    private void Update()
     {
-        UpdateCamouflage();
+        if (!isInitialized) return;
+
+        if (cameraTransform == null)
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null) return;
+            cameraTransform = mainCamera.transform;
+        }
+
+        float distance = GetDistanceToCamera();
+        UpdateDetailLevel(distance);
+        UpdateAnimationSpeed(distance);
+        UpdateSpriteUVRect(forwardRenderer, forwardHighlight, forwardMaterial, ref forwardLastSprite);
+        UpdateSpriteUVRect(backwardRenderer, backwardHighlight, backwardMaterial, ref backwardLastSprite);
+
+        UpdateFacing();
     }
 
-    // Margen alrededor del cruce de 90° (dot == 0) entre mostrar el sprite forward/backward.
-    // Cerca del enemigo, un movimiento lateral chico del jugador ya representa un cambio angular
-    // grande (el ángulo relativo escala con distancia lateral / distancia al enemigo), así que sin
-    // este margen el dot cruza 0 varias veces por segundo y el sprite parpadea entre ambas caras.
-    [SerializeField] private float facingHysteresis = 0.35f;
+    private float GetDistanceToCamera()
+    {
+        return cameraTransform == null ? 0f : Vector3.Distance(transform.position, cameraTransform.position);
+    }
 
-    // Segunda red de seguridad, independiente del margen de arriba: por más ruido angular que
-    // haya (steering del NavMeshAgent, etc.), nunca se permite más de un cambio de cara dentro
-    // de esta ventana de tiempo, así que un parpadeo rápido queda descartado de raíz.
-    [SerializeField] private float minFacingSwitchInterval = 0.2f;
-    private float lastFacingSwitchTime = float.NegativeInfinity;
+    private DetailLevel DetailLevelForDistance(float distance)
+    {
+        if (distance > farDistance) return DetailLevel.Far;
+        if (distance > mediumDistance) return DetailLevel.Medium;
+        if (distance > nearDistance) return DetailLevel.Near;
+        return DetailLevel.Full;
+    }
 
-    void FixedUpdate()
+    private void UpdateDetailLevel(float distance)
+    {
+        DetailLevel nextDetailLevel = currentDetailLevel;
+
+        switch (currentDetailLevel)
+        {
+            case DetailLevel.Far:
+                if (distance < farDistance - distanceHysteresis) nextDetailLevel = DetailLevel.Medium;
+                break;
+            case DetailLevel.Medium:
+                if (distance > farDistance + distanceHysteresis) nextDetailLevel = DetailLevel.Far;
+                else if (distance < mediumDistance - distanceHysteresis) nextDetailLevel = DetailLevel.Near;
+                break;
+            case DetailLevel.Near:
+                if (distance > mediumDistance + distanceHysteresis) nextDetailLevel = DetailLevel.Medium;
+                else if (distance < nearDistance - distanceHysteresis) nextDetailLevel = DetailLevel.Full;
+                break;
+            case DetailLevel.Full:
+                if (distance > nearDistance + distanceHysteresis) nextDetailLevel = DetailLevel.Near;
+                break;
+        }
+
+        if (nextDetailLevel == currentDetailLevel) return;
+
+        currentDetailLevel = nextDetailLevel;
+        ApplyDetailLevel(currentDetailLevel);
+    }
+
+    private void ApplyDetailLevel(DetailLevel detailLevel)
+    {
+        int pixelGrid = detailLevel switch
+        {
+            DetailLevel.Far => farPixelGrid,
+            DetailLevel.Medium => mediumPixelGrid,
+            DetailLevel.Near => nearPixelGrid,
+            _ => 0,
+        };
+        Color distanceTint = detailLevel switch
+        {
+            DetailLevel.Far => farDistanceTint,
+            DetailLevel.Medium => mediumDistanceTint,
+            DetailLevel.Near => nearDistanceTint,
+            _ => fullResolutionTint,
+        };
+
+        forwardMaterial.SetFloat(PixelGridSizeId, pixelGrid);
+        backwardMaterial.SetFloat(PixelGridSizeId, pixelGrid);
+        forwardMaterial.SetColor(DistanceTintId, distanceTint);
+        backwardMaterial.SetColor(DistanceTintId, distanceTint);
+        UpdateSpriteUVRect(forwardRenderer, forwardHighlight, forwardMaterial, ref forwardLastSprite, true);
+        UpdateSpriteUVRect(backwardRenderer, backwardHighlight, backwardMaterial, ref backwardLastSprite, true);
+    }
+
+    private void UpdateAnimationSpeed(float distance)
+    {
+        float targetAnimationFps = AnimationFpsForDistance(distance, currentDetailLevel);
+        currentAnimationFps = Mathf.MoveTowards(
+            currentAnimationFps,
+            targetAnimationFps,
+            animationFpsChangePerSecond * Time.deltaTime);
+        ApplyAnimationSpeed(currentAnimationFps);
+    }
+
+    private float AnimationFpsForDistance(float distance, DetailLevel detailLevel)
+    {
+        switch (detailLevel)
+        {
+            case DetailLevel.Far:
+                return farAnimationFps;
+            case DetailLevel.Medium:
+                return mediumAnimationFps;
+            case DetailLevel.Near:
+                return nearAnimationFps;
+            default:
+                float clampedFullSpeedDistance = Mathf.Clamp(fullSpeedDistance, 0f, nearDistance);
+                if (nearDistance <= clampedFullSpeedDistance) return closestAnimationFps;
+
+                float closeness = 1f - Mathf.InverseLerp(clampedFullSpeedDistance, nearDistance, distance);
+                return Mathf.Lerp(nearAnimationFps, closestAnimationFps, closeness);
+        }
+    }
+
+    private void ApplyAnimationSpeed(float animationFps)
+    {
+        if (spriteAnimators == null) return;
+
+        float speed = authoredAnimationFps > 0f ? animationFps / authoredAnimationFps : 1f;
+        foreach (Animator spriteAnimator in spriteAnimators)
+        {
+            if (spriteAnimator != null) spriteAnimator.speed = speed;
+        }
+    }
+
+    private void UpdateSpriteUVRect(SpriteRenderer spriteRenderer, SpriteRenderer highlightRenderer, Material material, ref Sprite lastSprite, bool force = false)
+    {
+        if (spriteRenderer == null || material == null) return;
+
+        Sprite sprite = spriteRenderer.sprite;
+        if (!force && sprite == lastSprite) return;
+
+        lastSprite = sprite;
+        if (highlightRenderer != null) highlightRenderer.sprite = sprite;
+        if (sprite == null || sprite.texture == null)
+        {
+            material.SetVector(SpriteUVRectId, new Vector4(0f, 0f, 1f, 1f));
+            return;
+        }
+
+        if (!spriteUvRectCache.TryGetValue(sprite, out Vector4 uvRect))
+        {
+            // Sprite.uv funciona tanto para sprites sueltos como para sprites empacados en atlas;
+            // textureRect puede no estar disponible para ciertos sprites empacados.
+            Vector2[] uv = sprite.uv;
+            float minX = float.PositiveInfinity;
+            float minY = float.PositiveInfinity;
+            float maxX = float.NegativeInfinity;
+            float maxY = float.NegativeInfinity;
+            foreach (Vector2 coordinate in uv)
+            {
+                minX = Mathf.Min(minX, coordinate.x);
+                minY = Mathf.Min(minY, coordinate.y);
+                maxX = Mathf.Max(maxX, coordinate.x);
+                maxY = Mathf.Max(maxY, coordinate.y);
+            }
+
+            uvRect = new Vector4(
+                minX,
+                minY,
+                Mathf.Max(0.0001f, maxX - minX),
+                Mathf.Max(0.0001f, maxY - minY));
+            spriteUvRectCache.Add(sprite, uvRect);
+        }
+
+        material.SetVector(SpriteUVRectId, uvRect);
+    }
+
+    private void UpdateFacing()
     {
         if (Time.time - lastFacingSwitchTime < minFacingSwitchInterval) return;
 
         Vector3 toCamera = (cameraTransform.position - transform.position).normalized;
         float facingDot = Vector3.Dot(transform.forward, toCamera);
 
-        // Solo cambia de cara al cruzar claramente hacia el otro lado; dentro del margen se
-        // mantiene la cara actual, así que el cruce exacto de 90° no causa parpadeo.
         if (showingForward && facingDot < -facingHysteresis)
         {
             SetFacing(false);
@@ -94,18 +299,6 @@ public class EnemyFacingSprite : MonoBehaviour
         }
     }
 
-    // Camuflaje por distancia: cuanto más lejos esté la cámara, más ruido cubre al sprite (0 =
-    // puro ruido, el enemigo se pierde); cerca, el ruido desaparece y se ve nítido (1).
-    void UpdateCamouflage()
-    {
-        float distance = Vector3.Distance(transform.position, cameraTransform.position);
-        float range = Mathf.Max(0.01f, obscuredDistance - clearDistance); // evita división por cero si se configuran mal en el Inspector
-        float clarity = Mathf.Clamp01(1f - (distance - clearDistance) / range);
-
-        forwardMaterial.SetFloat("_Clarity", clarity);
-        backwardMaterial.SetFloat("_Clarity", clarity);
-    }
-
     private void SetFacing(bool front)
     {
         showingForward = front;
@@ -113,8 +306,6 @@ public class EnemyFacingSprite : MonoBehaviour
         backwardSprite.SetActive(!front);
     }
 
-    // Crea, en runtime, la silueta ampliada para un sprite (forward o backward) dado. No
-    // requiere ningún objeto o material configurado de antemano en el prefab.
     private SpriteRenderer CreateHighlightRenderer(SpriteRenderer spriteRenderer)
     {
         GameObject highlightObject = new GameObject("HighlightOutline");
@@ -133,12 +324,31 @@ public class EnemyFacingSprite : MonoBehaviour
         return highlight;
     }
 
-    // Llamado por EnemyController mientras el jugador está agachado. Solo se termina viendo
-    // la silueta del sprite (forward/backward) que esté activo en este momento, ya que la otra
-    // queda bajo un GameObject padre inactivo.
+    // Llamado por EnemyController mientras el jugador está agachado.
     public void SetHighlighted(bool highlighted)
     {
+        if (!isInitialized) return;
+
         forwardHighlight.enabled = highlighted;
         backwardHighlight.enabled = highlighted;
+    }
+
+    private void OnDestroy()
+    {
+        if (forwardMaterial != null) Destroy(forwardMaterial);
+        if (backwardMaterial != null) Destroy(backwardMaterial);
+    }
+
+    private void OnValidate()
+    {
+        nearDistance = Mathf.Max(0f, nearDistance);
+        farDistance = Mathf.Max(nearDistance, farDistance);
+        mediumDistance = Mathf.Clamp(mediumDistance, nearDistance, farDistance);
+        distanceHysteresis = Mathf.Max(0f, distanceHysteresis);
+        fullSpeedDistance = Mathf.Clamp(fullSpeedDistance, 0f, nearDistance);
+        farPixelGrid = Mathf.Max(1, farPixelGrid);
+        mediumPixelGrid = Mathf.Max(1, mediumPixelGrid);
+        nearPixelGrid = Mathf.Max(1, nearPixelGrid);
+        authoredAnimationFps = Mathf.Max(0.01f, authoredAnimationFps);
     }
 }

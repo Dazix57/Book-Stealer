@@ -22,6 +22,7 @@ TagManager:
   - Area08
   - Area09
   - Area10
+  - a1
   layers:
   - Default
   - TransparentFX
@@ -30,7 +31,7 @@ TagManager:
   - Water
   - UI
   - NotWalkable
-  - 
+  - Walkable
   - 
   - 
   - 

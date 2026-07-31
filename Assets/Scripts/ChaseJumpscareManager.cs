@@ -9,8 +9,11 @@ public class ChaseJumpscareManager : MonoBehaviour
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeStrength = 15f; // píxeles de offset máximo mientras tiembla
     [SerializeField] private float fadeDuration = 0.4f;
+    [Tooltip("Orden propio del Canvas del jumpscare. Debe estar por encima de los Canvas de gameplay y pausa.")]
+    [SerializeField] private int jumpscareSortingOrder = 100;
 
     private RawImage jumpscareDisplay;
+    private Canvas jumpscareCanvas;
     private RectTransform jumpscareRect;
     private Vector2 jumpscareBasePosition;
     private Coroutine jumpscareRoutine;
@@ -25,7 +28,7 @@ public class ChaseJumpscareManager : MonoBehaviour
         EnemyController.ChaseJumpscare -= HandleChaseJumpscare;
     }
 
-    private void HandleChaseJumpscare(Texture jumpscareImage)
+    private void HandleChaseJumpscare(Texture jumpscareImage, float maxAlpha)
     {
         if (jumpscareImage == null) return;
 
@@ -33,14 +36,14 @@ public class ChaseJumpscareManager : MonoBehaviour
         {
             StopCoroutine(jumpscareRoutine);
         }
-        jumpscareRoutine = StartCoroutine(PlayJumpscare(jumpscareImage));
+        jumpscareRoutine = StartCoroutine(PlayJumpscare(jumpscareImage, maxAlpha));
     }
 
-    private IEnumerator PlayJumpscare(Texture jumpscareImage)
+    private IEnumerator PlayJumpscare(Texture jumpscareImage, float maxAlpha)
     {
         RawImage display = GetJumpscareDisplay();
         display.texture = jumpscareImage;
-        display.color = Color.white;
+        display.color = new Color(1f, 1f, 1f, maxAlpha);
         jumpscareRect.anchoredPosition = jumpscareBasePosition;
         display.gameObject.SetActive(true);
 
@@ -58,7 +61,7 @@ public class ChaseJumpscareManager : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             Color color = display.color;
-            color.a = 1f - Mathf.Clamp01(elapsed / fadeDuration);
+            color.a = maxAlpha * (1f - Mathf.Clamp01(elapsed / fadeDuration));
             display.color = color;
             yield return null;
         }
@@ -67,15 +70,26 @@ public class ChaseJumpscareManager : MonoBehaviour
         jumpscareRoutine = null;
     }
 
-    // Crea, la primera vez que se necesita, una imagen a pantalla completa (delante de
-    // todo lo demás en este Canvas) para mostrar el jumpscare.
+    // Crea una capa de Canvas independiente. SetAsLastSibling solo ordena elementos dentro de
+    // un mismo Canvas; no sirve frente a otro Canvas (por ejemplo el de un efecto de pantalla).
+    // El override de orden garantiza que esta imagen siempre se dibuje encima de esos efectos.
     private RawImage GetJumpscareDisplay()
     {
         if (jumpscareDisplay != null) return jumpscareDisplay;
 
-        GameObject displayObject = new GameObject("ChaseJumpscareDisplay", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+        GameObject displayObject = new GameObject(
+            "ChaseJumpscareDisplay",
+            typeof(RectTransform),
+            typeof(Canvas),
+            typeof(CanvasRenderer),
+            typeof(RawImage));
         displayObject.transform.SetParent(transform, false);
         displayObject.transform.SetAsLastSibling();
+
+        jumpscareCanvas = displayObject.GetComponent<Canvas>();
+        jumpscareCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        jumpscareCanvas.overrideSorting = true;
+        jumpscareCanvas.sortingOrder = jumpscareSortingOrder;
 
         jumpscareRect = (RectTransform)displayObject.transform;
         jumpscareRect.anchorMin = Vector2.zero;
@@ -86,6 +100,7 @@ public class ChaseJumpscareManager : MonoBehaviour
 
         jumpscareDisplay = displayObject.GetComponent<RawImage>();
         jumpscareDisplay.raycastTarget = false;
+        jumpscareDisplay.maskable = false;
         jumpscareDisplay.gameObject.SetActive(false);
 
         return jumpscareDisplay;

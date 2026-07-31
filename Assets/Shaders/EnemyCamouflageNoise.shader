@@ -1,25 +1,15 @@
-Shader "Custom/EnemyCamouflageNoise"
+Shader "Custom/EnemyDistancePixelation"
 {
-    // Variante "camuflaje" de Sprites/Default (misma base que Custom/SpriteXRay, ya probada en
-    // este proyecto). En vez de una luz o un halo, cada píxel del sprite se sustituye —al azar,
-    // en bloques tipo pixel-art, igual que el efecto de pixelado ya usado en la cámara principal
-    // (ver Assets/Materials/PixelCamera.renderTexture, 320x180 con filtro Point)— por un color de
-    // "ruido" oscuro. _Clarity (0-1, actualizado desde EnemyFacingSprite según la distancia a la
-    // cámara) controla qué fracción de bloques muestra el sprite real: 0 = puro ruido (el enemigo
-    // se pierde por completo, camuflado), 1 = sprite nítido, sin ruido. El ruido se recorta a la
-    // silueta del sprite (tex.a) y es animado (varía con el tiempo), para que se sienta como
-    // estática y no como un patrón fijo.
+    // Shader unlit compatible con URP para SpriteRenderer. En vez de sustituir bloques
+    // aleatorios con ruido cada frame, toma una muestra estable por cada celda de la
+    // cuadrícula. Esto da pixelado real sin que la silueta del enemigo parpadee.
     Properties
     {
-        _MainTex ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
-        _Clarity ("Clarity (0 = puro ruido, 1 = nitido)", Range(0, 1)) = 1
-        // Tope: aunque _Clarity llegue a 0, nunca se reemplaza el 100% del sprite por ruido en el
-        // mismo instante — evita el efecto "todo el sprite titila a la vez" de antes.
-        _MaxNoiseAmount ("Max Noise Amount (tope, no llega a 100%)", Range(0, 1)) = 0.35
-        _NoiseColor ("Noise Color", Color) = (0.015, 0.015, 0.015, 1)
-        _NoiseGridSize ("Noise Grid Size (bloques por sprite)", Float) = 12
-        _NoiseSpeed ("Noise Animation Speed", Float) = 1.5
+        _PixelGridSize ("Pixel grid size (0 = full resolution)", Float) = 0
+        _SpriteUVRect ("Sprite UV rect", Vector) = (0,0,1,1)
+        _DistanceTint ("Distance darkness tint", Color) = (0.8,0.8,0.8,1)
         [MaterialToggle] PixelSnap ("Pixel snap", Float) = 0
     }
 
@@ -32,6 +22,7 @@ Shader "Custom/EnemyCamouflageNoise"
             "RenderType"="Transparent"
             "PreviewType"="Plane"
             "CanUseSpriteAtlas"="True"
+            "RenderPipeline"="UniversalPipeline"
         }
 
         Cull Off
@@ -41,7 +32,7 @@ Shader "Custom/EnemyCamouflageNoise"
 
         Pass
         {
-        CGPROGRAM
+            CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 2.0
@@ -52,26 +43,24 @@ Shader "Custom/EnemyCamouflageNoise"
 
             struct appdata_t
             {
-                float4 vertex   : POSITION;
-                float4 color    : COLOR;
+                float4 vertex : POSITION;
+                float4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f
             {
-                float4 vertex   : SV_POSITION;
-                fixed4 color    : COLOR;
+                float4 vertex : SV_POSITION;
+                fixed4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
             fixed4 _Color;
-            float _Clarity;
-            float _MaxNoiseAmount;
-            fixed4 _NoiseColor;
-            float _NoiseGridSize;
-            float _NoiseSpeed;
+                float _PixelGridSize;
+                float4 _SpriteUVRect;
+                fixed4 _DistanceTint;
 
             v2f vert(appdata_t IN)
             {
@@ -81,6 +70,7 @@ Shader "Custom/EnemyCamouflageNoise"
                 OUT.vertex = UnityObjectToClipPos(IN.vertex);
                 OUT.texcoord = IN.texcoord;
                 OUT.color = IN.color * _Color;
+
                 #ifdef PIXELSNAP_ON
                 OUT.vertex = UnityPixelSnap(OUT.vertex);
                 #endif
@@ -104,35 +94,31 @@ Shader "Custom/EnemyCamouflageNoise"
                 return color;
             }
 
-            // Hash 2D barato (patrón conocido de "Book of Shaders"): suficiente para ruido tipo
-            // estática, no necesita ser criptográficamente uniforme.
-            float Hash(float2 p, float seed)
-            {
-                p = frac(p * float2(123.34, 456.21) + seed);
-                p += dot(p, p + 45.32);
-                return frac(p.x * p.y);
-            }
-
             fixed4 frag(v2f IN) : SV_Target
             {
-                fixed4 tex = SampleSpriteTexture(IN.texcoord);
-                fixed4 spriteColor = tex * IN.color;
-                spriteColor.rgb *= spriteColor.a;
+                float2 sampleUV = IN.texcoord;
 
-                // Cuadrícula tipo pixel-art: el ruido se decide por bloque, no por texel, para que
-                // se vea como el mismo pixelado grueso que ya usa la cámara, no como grano fino.
-                float2 blockUV = floor(IN.texcoord * _NoiseGridSize);
-                float n = Hash(blockUV, floor(_Time.y * _NoiseSpeed));
+                // La UV del SpriteRenderer puede ocupar solo una región de un atlas. Se lleva
+                // primero al espacio local del sprite, se cuantiza allí y luego se devuelve al
+                // atlas. Así 16 significa 16 x 16 celdas del sprite, no de toda la textura.
+                if (_PixelGridSize > 0.5)
+                {
+                    float2 localUV = (IN.texcoord - _SpriteUVRect.xy) / _SpriteUVRect.zw;
+                    // Evita que la arista UV exacta (1.0) salte a la celda siguiente o,
+                    // en un atlas, muestree accidentalmente el sprite vecino.
+                    localUV = clamp(localUV, 0.0, 0.999999);
+                    localUV = (floor(localUV * _PixelGridSize) + 0.5) / _PixelGridSize;
+                    sampleUV = _SpriteUVRect.xy + localUV * _SpriteUVRect.zw;
+                }
 
-                fixed4 noiseColor = fixed4(_NoiseColor.rgb, 1) * tex.a;
-
-                // lejos (_Clarity bajo) = más bloques se vuelven ruido, con tope en _MaxNoiseAmount
-                float noiseThreshold = min(1 - _Clarity, _MaxNoiseAmount);
-                fixed4 c = (n < noiseThreshold) ? noiseColor : spriteColor;
-
-                return c;
+                fixed4 color = SampleSpriteTexture(sampleUV) * IN.color;
+                color.rgb *= color.a;
+                // Tint multiplicativo: conserva los colores y el alpha originales, pero los
+                // oscurece de forma estable según el nivel de distancia elegido en C#.
+                color.rgb *= _DistanceTint.rgb;
+                return color;
             }
-        ENDCG
+            ENDCG
         }
     }
 }
